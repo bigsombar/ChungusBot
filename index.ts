@@ -10,7 +10,7 @@ const client = new DiscordJS.Client({
 })
 
 client.on('ready', () => {
-    console.log('Chungus is ready my ass')
+    console.log('Chungus is ready my ass!')
 })
 
 client.on('messageCreate', (message) => {
