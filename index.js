@@ -1,5 +1,4 @@
 "use strict";
-//npm run tsc - to auto compile to JS
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -23,6 +22,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+//npm run tsc - to auto compile to JS
+//git add *, git commit -m "sampletext", git push
+//botsync in cmd
 const discord_js_1 = __importStar(require("discord.js"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -38,7 +40,7 @@ client.on('ready', () => {
 client.on('messageCreate', (message) => {
     if (message.content === 'ping') {
         message.reply({
-            content: 'pong!!',
+            content: 'pong',
         });
     }
 });

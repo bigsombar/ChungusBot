@@ -1,5 +1,6 @@
 //npm run tsc - to auto compile to JS
-
+//git add *, git commit -m "sampletext", git push
+//botsync in cmd
 import DiscordJS, { Intents } from 'discord.js'
 import dotevn from 'dotenv'
 dotevn.config()
@@ -18,7 +19,7 @@ client.on('ready', () => {
 client.on('messageCreate', (message) => {
     if (message.content === 'ping') {
         message.reply({
-            content: 'pong!!',
+            content: 'pong',
         })
     }
 })
