@@ -1,4 +1,5 @@
 "use strict";
+//npm run tsc - to auto compile to JS
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -37,7 +38,7 @@ client.on('ready', () => {
 client.on('messageCreate', (message) => {
     if (message.content === 'ping') {
         message.reply({
-            content: 'pong!',
+            content: 'pong!!',
         });
     }
 });
