@@ -31,10 +31,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-//npm run tsc - to auto compile to JS
-//npm run dev - to rerun bot when saving ts file
-//git add *, git commit -m "sampletext", git push
-//botsync in cmd
 const discord_js_1 = __importStar(require("discord.js"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -61,6 +57,20 @@ client.on('ready', () => {
     commands === null || commands === void 0 ? void 0 : commands.create({ name: 'ядро',
         description: 'кидает в тебя ядро, берегись',
     });
+    commands === null || commands === void 0 ? void 0 : commands.create({ name: 'юзеры',
+        description: 'выводит список пользователей сервера',
+    });
+    commands === null || commands === void 0 ? void 0 : commands.create({ name: 'удалить_команду',
+        description: 'удаляет указанную слэш команду с сервера',
+        options: [
+            {
+                name: 'команда',
+                description: 'введите название команды без /',
+                required: true,
+                type: discord_js_1.default.Constants.ApplicationCommandOptionTypes.STRING
+            }
+        ]
+    });
     commands === null || commands === void 0 ? void 0 : commands.create({ name: 'кто_я',
         description: 'кто ты по жизни?',
         options: [
@@ -80,7 +90,7 @@ client.on('ready', () => {
     });
 });
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
     if (!interaction.isCommand()) {
         return;
     }
@@ -116,13 +126,12 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
         }
     }
     if (commandName === 'кто_я') {
+        let commandFunctions = require('./InternalFunctions.js');
         let adminStatus = (_j = (yield ((_h = (_g = interaction.command) === null || _g === void 0 ? void 0 : _g.guild) === null || _h === void 0 ? void 0 : _h.members.fetch(interaction.user.id)))) === null || _j === void 0 ? void 0 : _j.permissions.has("ADMINISTRATOR");
         let nick = (_m = (yield ((_l = (_k = interaction.command) === null || _k === void 0 ? void 0 : _k.guild) === null || _l === void 0 ? void 0 : _l.members.fetch(interaction.user.id)))) === null || _m === void 0 ? void 0 : _m.nickname;
         let firstName = options.getString('имя').toLowerCase();
         let dayOfBirth = options.getNumber('день');
-        let yourName;
-        let firstNames = new Map();
-        let daysOfBirth = new Map();
+        let you = commandFunctions.names(firstName, dayOfBirth);
         if (!(/^[а-я]+$/i.test(firstName))) {
             interaction.reply({
                 content: `Неправильная буква имени, подходит от а до я`,
@@ -137,83 +146,64 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
             });
             return;
         }
-        firstNames.set("а", "Сокрушитель");
-        daysOfBirth.set(1, "школьников");
-        firstNames.set("б", "Любитель");
-        daysOfBirth.set(2, "арбузов");
-        firstNames.set("в", "Ценитель");
-        daysOfBirth.set(3, "говнарей");
-        firstNames.set("г", "Метатель");
-        daysOfBirth.set(4, "олдфагов");
-        firstNames.set("д", "Гроза");
-        daysOfBirth.set(5, "вагин");
-        firstNames.set("е", "Повелитель");
-        daysOfBirth.set(6, "демонов");
-        firstNames.set("ж", "Пожинатель");
-        daysOfBirth.set(7, "депутатов");
-        firstNames.set("з", "Победитель");
-        daysOfBirth.set(8, "котят");
-        firstNames.set("и", "Опустошитель");
-        daysOfBirth.set(9, "жнецов");
-        firstNames.set("к", "Хейтер");
-        daysOfBirth.set(10, "жиров");
-        firstNames.set("л", "Убийца");
-        daysOfBirth.set(11, "самок");
-        firstNames.set("м", "Растворитель");
-        daysOfBirth.set(12, "мужиков");
-        firstNames.set("н", "Дрочитель");
-        daysOfBirth.set(13, "пухляшей");
-        firstNames.set("о", "Предводитель");
-        daysOfBirth.set(14, "трапов");
-        firstNames.set("п", "Воин");
-        daysOfBirth.set(15, "говна");
-        firstNames.set("р", "Адепт");
-        daysOfBirth.set(16, "света");
-        firstNames.set("с", "Уборщик");
-        daysOfBirth.set(17, "троллей");
-        firstNames.set("т", "Почитатель");
-        daysOfBirth.set(18, "орков");
-        firstNames.set("у", "Создатель");
-        daysOfBirth.set(19, "наномашин");
-        firstNames.set("ф", "Фанатик");
-        daysOfBirth.set(20, "дрыщей");
-        firstNames.set("х", "Вождь");
-        daysOfBirth.set(21, "веганов");
-        firstNames.set("ц", "Жрец");
-        daysOfBirth.set(22, "моралфагов");
-        firstNames.set("ч", "Преслужник");
-        daysOfBirth.set(23, "душ");
-        firstNames.set("ш", "Экзорцист");
-        daysOfBirth.set(24, "фемок");
-        firstNames.set("э", "Владыка");
-        daysOfBirth.set(25, "торчков");
-        firstNames.set("ю", "Священник");
-        daysOfBirth.set(26, "паладинов");
-        firstNames.set("я", "Призыватель");
-        daysOfBirth.set(27, "сосисок");
-        daysOfBirth.set(28, "качков");
-        daysOfBirth.set(29, "админов");
-        daysOfBirth.set(30, "ботов");
-        daysOfBirth.set(31, "аниме");
-        yourName = `${firstNames.get(firstName)} ${daysOfBirth.get(dayOfBirth)}`;
         interaction.reply({
-            content: `Ты ${yourName}`,
+            content: `Ты ${you}`,
             ephemeral: true,
         });
         setTimeout(() => {
             var _a;
-            (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send(`${nick} заявляет, что он теперь ${yourName}`);
+            (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send(`${nick} заявляет, что он теперь ${you}`);
         }, 3000);
         if (!adminStatus) {
-            (_p = (_o = interaction.command) === null || _o === void 0 ? void 0 : _o.guild) === null || _p === void 0 ? void 0 : _p.members.fetch(interaction.user.id).then((member) => { member.setNickname(yourName); });
+            (_p = (_o = interaction.command) === null || _o === void 0 ? void 0 : _o.guild) === null || _p === void 0 ? void 0 : _p.members.fetch(interaction.user.id).then((member) => { member.setNickname(you); });
         }
     }
-}));
-client.on('messageCreate', (message) => {
-    if (message.content == 'ping') {
-        message.reply({
-            content: 'pong',
+    if (commandName === 'удалить_команду') {
+        let cmdName = options.getString('команда');
+        let adminStatus = (_s = (yield ((_r = (_q = interaction.command) === null || _q === void 0 ? void 0 : _q.guild) === null || _r === void 0 ? void 0 : _r.members.fetch(interaction.user.id)))) === null || _s === void 0 ? void 0 : _s.permissions.has("ADMINISTRATOR");
+        if (adminStatus) {
+            let foundCmdName = (_u = (_t = interaction.guild) === null || _t === void 0 ? void 0 : _t.commands.cache.find(c => c.name === cmdName)) === null || _u === void 0 ? void 0 : _u.name;
+            if (foundCmdName !== undefined) {
+                (_w = (_v = interaction.guild) === null || _v === void 0 ? void 0 : _v.commands.cache.find(c => c.name === cmdName)) === null || _w === void 0 ? void 0 : _w.delete();
+                interaction.reply({
+                    content: `команда ${foundCmdName} удалена`,
+                    ephemeral: true,
+                });
+            }
+            else {
+                interaction.reply({
+                    content: `команда ${cmdName} не найдена`,
+                    ephemeral: true,
+                });
+            }
+        }
+        else {
+            interaction.reply({
+                content: `у вас недостаточно прав`,
+                ephemeral: true,
+            });
+        }
+    }
+    if (commandName === 'юзеры') {
+        let list = [];
+        yield ((_x = interaction.guild) === null || _x === void 0 ? void 0 : _x.members.fetch().then((members) => members.forEach((member) => {
+            list.push(`${member.user.username} | ${member.nickname}`);
+        })));
+        interaction.reply({
+            content: ` зачем тебе эта информация? (¬､¬) \nя удалю это через 15 секунд, записывай быстрее`,
+            ephemeral: false,
+        });
+        setTimeout(() => {
+            interaction.deleteReply();
+        }, 7000);
+        const embedUserList = new discord_js_1.MessageEmbed()
+            .setColor('GREEN')
+            .setTitle('Список пользователей:')
+            .setDescription(list.join("\n"))
+            .setImage('https://c.tenor.com/UZmwl8vaGC0AAAAi/peepo-g.gif');
+        (_y = interaction.channel) === null || _y === void 0 ? void 0 : _y.send({ embeds: [embedUserList] }).then(msg => {
+            setTimeout(() => msg.delete(), 15000);
         });
     }
-});
+}));
 client.login(process.env.TOKEN);
