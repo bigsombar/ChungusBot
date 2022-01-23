@@ -35,20 +35,25 @@ const discord_js_1 = __importStar(require("discord.js"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const pg_1 = require("pg");
 dotenv_1.default.config();
-// const pool = new Pool({          //-for dev usage
-//     user: 'bigsombar',
-//     host: '192.168.0.180',
-//     database: 'bigsombar',
-//     password: '7015',
-//     port: 5432,
-// })
-const pool = new pg_1.Pool({
-    user: 'bigsombar',
-    host: '127.0.0.1',
-    database: 'bigsombar',
-    password: '7015',
-    port: 5432,
-});
+let pool = new pg_1.Pool();
+if (process.platform == 'win32') {
+    pool = new pg_1.Pool({
+        user: 'bigsombar',
+        host: '192.168.0.180',
+        database: 'bigsombar',
+        password: '7015',
+        port: 5432,
+    });
+}
+else {
+    pool = new pg_1.Pool({
+        user: 'bigsombar',
+        host: '127.0.0.1',
+        database: 'bigsombar',
+        password: '7015',
+        port: 5432,
+    });
+}
 const client = new discord_js_1.default.Client({
     intents: [
         discord_js_1.Intents.FLAGS.GUILDS,
@@ -161,6 +166,7 @@ client.on('ready', () => {
             }
         ]
     });
+    //var TestPostInterval = setInterval(BDSync, (20000))
     var TestPostInterval = setInterval(BDSync, (60000 * 60)); //выполняется каждый час
 });
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {

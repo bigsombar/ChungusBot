@@ -3,7 +3,6 @@
 //git add *, git commit -m "sampletext", git push
 //botsync in cmd
 //добавляй await к запросам требующим время идиот
-//НЕ ЗАБЫТЬ NPM INSTALL и вручную спуллить на сервак
 import { Utils } from 'discord-api-types'
 import DiscordJS, { Channel, Guild, Intents, Message, MessageEmbed } from 'discord.js'
 import { MembershipStates } from 'discord.js/typings/enums'
@@ -11,21 +10,26 @@ import dotevn from 'dotenv'
 import { Pool, Client } from 'pg'
 
 dotevn.config()
+let pool = new Pool()
+if(process.platform == 'win32') {
+    pool = new Pool({         
+        user: 'bigsombar',
+        host: '192.168.0.180',
+        database: 'bigsombar',
+        password: '7015',
+        port: 5432,
+    })
+} else {
+    pool = new Pool({          
+        user: 'bigsombar',
+        host: '127.0.0.1',
+        database: 'bigsombar',
+        password: '7015',
+        port: 5432,
+    }) 
+}
 
-// const pool = new Pool({          //-for dev usage
-//     user: 'bigsombar',
-//     host: '192.168.0.180',
-//     database: 'bigsombar',
-//     password: '7015',
-//     port: 5432,
-// })
-const pool = new Pool({          //-for server usage
-    user: 'bigsombar',
-    host: '127.0.0.1',
-    database: 'bigsombar',
-    password: '7015',
-    port: 5432,
-})
+
 
 
 const client = new DiscordJS.Client({
@@ -141,7 +145,7 @@ client.on('ready', () => {
         }
     ]
     }) 
-
+    //var TestPostInterval = setInterval(BDSync, (20000))
     var TestPostInterval = setInterval(BDSync, (60000*60)) //выполняется каждый час
 })
 
@@ -292,9 +296,6 @@ client.on('interactionCreate', async (interaction) => {
             })
         }
     }
-    
-    
-
     
 })
 
