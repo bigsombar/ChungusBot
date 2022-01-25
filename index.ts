@@ -1,5 +1,6 @@
 //npm run tsc - to auto compile to JS
 //npm run dev - to rerun bot when saving ts file
+//ts-node index.ts - for manual start
 //git add *, git commit -m "sampletext", git push
 //botsync in cmd
 //добавляй await к запросам требующим время идиот
@@ -98,8 +99,12 @@ client.on('ready', () => {
     }
     function exitSignalHandler() {
         sendToChat('bot-test','About to exit')
-        console.log(`About to exit`);
-        process.exit()
+        console.log(`About to exit`)
+        clearInterval(TestPostInterval)
+        pool.end()
+        setTimeout(() => {
+            process.exit()
+        }, 1000) 
     }
     // COMMANDS DECLARATION
     commands?.create({name: 'ядро',
@@ -152,8 +157,6 @@ client.on('ready', () => {
     var TestPostInterval = setInterval(BDSync, (60000*60)) //выполняется каждый час
     //EXIT HANDLERS
     process.on('SIGINT', exitSignalHandler)
-    process.on('SIGTERM', exitSignalHandler)
-    process.on('SIGQUIT', exitSignalHandler)
 })
 
 client.on('interactionCreate', async (interaction) => {
