@@ -29,9 +29,6 @@ if(process.platform == 'win32') {
     }) 
 }
 
-
-
-
 const client = new DiscordJS.Client({
     intents: [
        Intents.FLAGS.GUILDS,
@@ -53,11 +50,11 @@ client.on('ready', () => {
     } else {
         commands = client.application?.commands
     }
-    //REPEAT FUNCTIONS
-    function TestPost() {
-        let channel = guild?.channels.cache.find(c => c.name === 'bot-test')
+    //FUNCTIONS
+    function sendToChat(channelName: string, importantlText: string) {
+        let channel = guild?.channels.cache.find(c => c.name === channelName)
         if (channel?.isText()) {
-            channel.send('POG')
+            channel.send(importantlText)
         }
     }
     async function BDSync() {
@@ -98,6 +95,11 @@ client.on('ready', () => {
               client.release()
             }
           })().catch(err => console.log(err.stack))  
+    }
+    function exitSignalHandler() {
+        sendToChat('bot-test','About to exit')
+        console.log(`About to exit`);
+        process.exit()
     }
     // COMMANDS DECLARATION
     commands?.create({name: 'ядро',
@@ -145,8 +147,13 @@ client.on('ready', () => {
         }
     ]
     }) 
+    //REPEAT VARIABLES
     //var TestPostInterval = setInterval(BDSync, (20000))
     var TestPostInterval = setInterval(BDSync, (60000*60)) //выполняется каждый час
+    //EXIT HANDLERS
+    process.on('SIGINT', exitSignalHandler)
+    process.on('SIGTERM', exitSignalHandler)
+    process.on('SIGQUIT', exitSignalHandler)
 })
 
 client.on('interactionCreate', async (interaction) => {
@@ -298,6 +305,8 @@ client.on('interactionCreate', async (interaction) => {
     }
     
 })
+
+
 
 
 client.login(process.env.TOKEN)
