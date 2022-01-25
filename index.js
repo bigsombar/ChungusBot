@@ -123,7 +123,11 @@ client.on('ready', () => {
     function exitSignalHandler() {
         sendToChat('bot-test', 'About to exit');
         console.log(`About to exit`);
-        process.exit();
+        clearInterval(TestPostInterval);
+        pool.end();
+        setTimeout(() => {
+            process.exit();
+        }, 1000);
     }
     // COMMANDS DECLARATION
     commands === null || commands === void 0 ? void 0 : commands.create({ name: 'ядро',
@@ -176,8 +180,6 @@ client.on('ready', () => {
     var TestPostInterval = setInterval(BDSync, (60000 * 60)); //выполняется каждый час
     //EXIT HANDLERS
     process.on('SIGINT', exitSignalHandler);
-    process.on('SIGTERM', exitSignalHandler);
-    process.on('SIGQUIT', exitSignalHandler);
 });
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2;
