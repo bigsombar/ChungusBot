@@ -11,6 +11,7 @@ import dotevn from 'dotenv'
 import { Pool, Client } from 'pg'
 
 dotevn.config()
+
 let pool = new Pool()
 if(process.platform == 'win32') {
     pool = new Pool({         
@@ -51,7 +52,7 @@ client.on('ready', () => {
     } else {
         commands = client.application?.commands
     }
-    //FUNCTIONS
+    // FUNCTIONS
     function sendToChat(channelName: string, importantlText: string) {
         let channel = guild?.channels.cache.find(c => c.name === channelName)
         if (channel?.isText()) {
@@ -93,13 +94,15 @@ client.on('ready', () => {
                     )
                 })
             } finally {
-              client.release()
+                client.release()
             }
           })().catch(err => console.log(err.stack))  
     }
     function exitSignalHandler() {
-        sendToChat('bot-test','About to exit')
-        console.log(`About to exit`)
+        var Da = new Date();
+        var datetime = `${Da.getHours()}:${Da.getMinutes()}  ${Da.getDate()}-${Da.getMonth()+1}-${Da.getFullYear()}`
+        sendToChat('bot-logs',`About to exit in ${datetime}`)
+        console.log(`About to exit in ${datetime}`)
         clearInterval(TestPostInterval)
         pool.end()
         setTimeout(() => {
@@ -110,17 +113,28 @@ client.on('ready', () => {
     commands?.create({name: 'ядро',
         description: 'кидает в тебя ядро, берегись',
     })
+    commands?.create({name: 'кинуть_ядро_в',
+        description: 'кидает ядро в невинного юзера',
+        options: [
+            {
+                name: 'юзер',
+                description: 'укажите юзера',
+                required: true,
+                type: DiscordJS.Constants.ApplicationCommandOptionTypes.USER
+            }
+        ]
+    })
     commands?.create({name: 'юзеры',
     description: 'выводит список пользователей сервера',
     })
     commands?.create({name: 'юзер',
-    description: 'выводит информацию о пользователе',
+    description: 'выводит информацию о себе или о другом юзере',
     options: [
         {
-            name: 'имя',
-            description: 'имя пользователя до #',
-            required: true,
-            type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING
+            name: 'юзер',
+            description: 'укажите юзера',
+            required: false,
+            type: DiscordJS.Constants.ApplicationCommandOptionTypes.USER
         }
     ]
     })  
@@ -152,10 +166,9 @@ client.on('ready', () => {
         }
     ]
     }) 
-    //REPEAT VARIABLES
-    //var TestPostInterval = setInterval(BDSync, (20000))
+    // REPEAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
     var TestPostInterval = setInterval(BDSync, (60000*60)) //выполняется каждый час
-    //EXIT HANDLERS
+    // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler)
 })
 
@@ -169,26 +182,62 @@ client.on('interactionCreate', async (interaction) => {
         let adminStatus = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.permissions.has("ADMINISTRATOR")
         let nick = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.nickname
         let rTime = Math.floor((Math.random() * 15000) + 5000)
+        var randomResult = Math.random() // from 0 to 1
+        function stunned() {
+            const embedStuned = new MessageEmbed()
+            .setColor('GREEN')
+            .setTitle(`${nick}`)
+            .setDescription(`оглушило на ${rTime/1000} секунд`)
+            .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif')
+            interaction.channel?.send({ embeds: [embedStuned] })
+            .then(msg => {
+                setTimeout(() => msg.delete(), rTime)
+            })
+            interaction.guild?.members.fetch(interaction.user.id).then((member)=> {member.timeout(rTime, 'вас оглушило ядром')})
+        }
+        function catched() {
+            const embedCatch = new MessageEmbed()
+            .setColor('GREEN')
+            .setTitle(`${nick}`)
+            .setDescription(`поймал ядро 🎉`)
+            .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif')
+            interaction.channel?.send({ embeds: [embedCatch] })
+            .then(msg => {
+                setTimeout(() => msg.delete(), 10000)
+            })
+            ;(async () => {
+                const client = await pool.connect()
+                try {
+                    const res = await client.query(`
+                    update users
+                    set user_money = user_money + 1
+                    where user_id = '${interaction.user.id}';
+                    `)
+                } finally {
+                    client.release()
+                }
+              })().catch(err => console.log(err.stack))
+        }
         interaction.reply({
             content: `Лови ядро!`,
-            ephemeral: true, 
-        })    
+            ephemeral: false, 
+        })   
         setTimeout(() => {
-            interaction.channel?.send(`༼つಠ益ಠ༽つ ─=≡🔴 ${nick}`)
-        }, 1000);
+            interaction.deleteReply()
+        }, 5000); 
         setTimeout(() => {
-            interaction.channel?.send(`💥💥💥`)
-        }, 3000);
-        if(!adminStatus) {
-            setTimeout(() => {
-                interaction.channel?.send(`${nick} оглушило на ${rTime/1000} секунд`)
-                interaction.command?.guild?.members.fetch(interaction.user.id).then((member)=> {member.timeout(rTime, 'вас оглушило ядром')})
-            }, 4000);
-        } else {
-            setTimeout(() => {
-                interaction.channel?.send(`${nick} блокирует весь урон`)
-            }, 4000);
-        }                                
+            if(!adminStatus) {
+                if (randomResult < 0.7) {
+                    // 70% chance of being stunned
+                    stunned();
+                }  else {
+                    // 30% chance of catch cannon ball
+                    catched(); 
+                }
+            } else {
+                catched(); //admin always catches
+            }
+        }, 2000);                                    
     }
     if(commandName === 'юзеры') {
         let list: string[] = []
@@ -217,36 +266,60 @@ client.on('interactionCreate', async (interaction) => {
         })
     }
     if(commandName === 'юзер') {
-        let userName = options.getString('имя')!
+        let user = interaction.user
+        if(options.getUser('юзер')?.username !== undefined) {
+            user = options.getUser('юзер')!
+        }
         let m = await interaction.guild?.members.fetch()
-        let user_id = m?.find(m => m.user.username === userName)?.id
-        let user_nick
-        let user_avatar
+        let user_id = m?.find(m => m.user.id === user?.id)?.id
+        let user_nick: string
+        let user_name: string
+        let user_avatar: string
+        let user_money: string
         let roles: string[] = []
         await interaction.guild?.members.fetch(user_id!)?.then((member)=> {
-            user_nick = member.nickname
-            user_avatar = member.user.avatarURL()
+            user_name = member.user.username
+            user_nick = member.nickname!
+            user_avatar = member.user.avatarURL()!
             member.roles.cache.each(role => {
                 roles.push(`<@&${role.id}>`)
             })
         })
-        interaction.reply({
-            content: `Хотел подробностей, да?\nно я не могу долго такое показывать`,
-            ephemeral: false,
-        })
+
+        ;(async () => {
+            const client = await pool.connect()
+            try {
+                const res = await client.query(`
+                select user_money from users
+                where user_id = '${user_id}';
+                `)
+                user_money = res.rows[0].user_money
+            } finally {
+                client.release()
+            }
+        })().catch(err => console.log(err.stack))
+        
+        setTimeout(() => {
+            interaction.reply({
+                content: `Хотел подробностей, да?\nно я не могу долго такое показывать`,
+                ephemeral: false,
+            })
+            const embedUserInfo = new MessageEmbed()
+            .setColor('GREEN')
+            .setTitle(`${user_name}`)
+            .setDescription(`${user_nick}`)
+            .setImage(`${user_avatar}`)
+            .addField('Роли:', roles.join('\n'), true) 
+            .addField('Ядра:', `${user_money}`, true)      
+            interaction.channel?.send({ embeds: [embedUserInfo] })
+            .then(msg => {
+                setTimeout(() => msg.delete(), 15000)
+            })
+        }, 1000);
         setTimeout(() => {
             interaction.deleteReply()
-        }, 7000); 
-        const embedUserInfo = new MessageEmbed()
-        .setColor('GREEN')
-        .setTitle(userName)
-        .setDescription(`${user_nick}`)
-        .setImage(`${user_avatar}`)
-        .addField('Роли:', roles.join('\n'), true)       
-        interaction.channel?.send({ embeds: [embedUserInfo] })
-        .then(msg => {
-            setTimeout(() => msg.delete(), 20000)
-        })
+        }, 7000);
+        
 
     }
     if(commandName === 'кто_я') {
