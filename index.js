@@ -36,24 +36,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const pg_1 = require("pg");
 dotenv_1.default.config();
 let pool = new pg_1.Pool();
-if (process.platform == 'win32') {
-    pool = new pg_1.Pool({
-        user: 'bigsombar',
-        host: '192.168.0.180',
-        database: 'bigsombar',
-        password: '7015',
-        port: 5432,
-    });
-}
-else {
-    pool = new pg_1.Pool({
-        user: 'bigsombar',
-        host: '127.0.0.1',
-        database: 'bigsombar',
-        password: '7015',
-        port: 5432,
-    });
-}
 const client = new discord_js_1.default.Client({
     intents: [
         discord_js_1.Intents.FLAGS.GUILDS,
@@ -63,8 +45,32 @@ const client = new discord_js_1.default.Client({
     ]
 });
 client.on('ready', () => {
-    var _a;
+    var _a, _b, _c;
     console.log('Chungus is ready my ass!');
+    if (process.platform == 'win32') {
+        pool = new pg_1.Pool({
+            user: 'bigsombar',
+            host: '192.168.0.180',
+            database: 'bigsombar',
+            password: '7015',
+            port: 5432,
+        });
+        (_a = client.user) === null || _a === void 0 ? void 0 : _a.setActivity("за разработкой📝", {
+            type: "WATCHING"
+        });
+    }
+    else {
+        pool = new pg_1.Pool({
+            user: 'bigsombar',
+            host: '127.0.0.1',
+            database: 'bigsombar',
+            password: '7015',
+            port: 5432,
+        });
+        (_b = client.user) === null || _b === void 0 ? void 0 : _b.setActivity("за ядрами", {
+            type: "WATCHING"
+        });
+    }
     const guildId = '709463991759536139';
     const guild = client.guilds.cache.get(guildId);
     let commands;
@@ -72,7 +78,7 @@ client.on('ready', () => {
         commands = guild.commands;
     }
     else {
-        commands = (_a = client.application) === null || _a === void 0 ? void 0 : _a.commands;
+        commands = (_c = client.application) === null || _c === void 0 ? void 0 : _c.commands;
     }
     // FUNCTIONS
     function sendToChat(channelName, importantlText) {
@@ -136,7 +142,7 @@ client.on('ready', () => {
         description: 'кидает в тебя ядро, берегись',
     });
     commands === null || commands === void 0 ? void 0 : commands.create({ name: 'кинуть_ядро_в',
-        description: 'кидает ядро в невинного юзера',
+        description: 'попросить кинуть ядро в невинного юзера',
         options: [
             {
                 name: 'юзер',
@@ -189,12 +195,12 @@ client.on('ready', () => {
         ]
     });
     // REPEAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
-    var TestPostInterval = setInterval(BDSync, (60000 * 60)); //выполняется каждый час
+    var TestPostInterval = setInterval(BDSync, (60000 * 60)); //every hour
     // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler);
 });
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4;
     if (!interaction.isCommand()) {
         return;
     }
@@ -203,13 +209,13 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
         let adminStatus = (_c = (yield ((_b = (_a = interaction.command) === null || _a === void 0 ? void 0 : _a.guild) === null || _b === void 0 ? void 0 : _b.members.fetch(interaction.user.id)))) === null || _c === void 0 ? void 0 : _c.permissions.has("ADMINISTRATOR");
         let nick = (_f = (yield ((_e = (_d = interaction.command) === null || _d === void 0 ? void 0 : _d.guild) === null || _e === void 0 ? void 0 : _e.members.fetch(interaction.user.id)))) === null || _f === void 0 ? void 0 : _f.nickname;
         let rTime = Math.floor((Math.random() * 15000) + 5000);
-        var randomResult = Math.random(); // from 0 to 1
+        var catchChance = Math.random(); // from 0 to 1
         function stunned() {
             var _a, _b;
             const embedStuned = new discord_js_1.MessageEmbed()
                 .setColor('GREEN')
                 .setTitle(`${nick}`)
-                .setDescription(`оглушило на ${rTime / 1000} секунд`)
+                .setDescription(`оглушило на ${Math.round(rTime / 1000)} секунд`)
                 .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif');
             (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedStuned] }).then(msg => {
                 setTimeout(() => msg.delete(), rTime);
@@ -224,7 +230,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                 .setDescription(`поймал ядро 🎉`)
                 .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif');
             (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedCatch] }).then(msg => {
-                setTimeout(() => msg.delete(), 10000);
+                setTimeout(() => msg.delete(), 7000);
             });
             (() => __awaiter(this, void 0, void 0, function* () {
                 const client = yield pool.connect();
@@ -249,7 +255,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
         }, 5000);
         setTimeout(() => {
             if (!adminStatus) {
-                if (randomResult < 0.7) {
+                if (catchChance < 0.7) {
                     // 70% chance of being stunned
                     stunned();
                 }
@@ -263,9 +269,130 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
             }
         }, 2000);
     }
+    if (commandName === 'кинуть_ядро_в') {
+        let currentMember = (yield ((_g = interaction.guild) === null || _g === void 0 ? void 0 : _g.members.fetch(interaction.user.id)));
+        let enemyMember = (yield ((_h = interaction.guild) === null || _h === void 0 ? void 0 : _h.members.fetch(options.getUser('юзер').id)));
+        let adminStatus = enemyMember.permissions.has("ADMINISTRATOR");
+        let stunTime = Math.floor((Math.random() * 15000) + 5000);
+        var hitChance = Math.random();
+        var catchChance = Math.random();
+        var currentMemberMoney = 0;
+        const client = yield pool.connect();
+        try {
+            const res = yield client.query(`
+            select user_money from users
+            where user_id = '${currentMember.id}';
+            `);
+            currentMemberMoney = res.rows[0].user_money;
+        }
+        finally {
+            client.release();
+        }
+        if (currentMemberMoney <= 0) { //Checking money is available
+            interaction.reply({
+                content: `${currentMember === null || currentMember === void 0 ? void 0 : currentMember.nickname} у вас недостаточно ядер`,
+                ephemeral: true,
+            });
+            return;
+        }
+        else {
+            interaction.reply({
+                content: `${currentMember === null || currentMember === void 0 ? void 0 : currentMember.nickname} Кидает ядро в ${enemyMember === null || enemyMember === void 0 ? void 0 : enemyMember.nickname}!`,
+                ephemeral: false,
+            });
+            setTimeout(() => {
+                interaction.deleteReply();
+            }, 5000);
+        }
+        function stunned() {
+            var _a;
+            const embedStuned = new discord_js_1.MessageEmbed()
+                .setColor('GREEN')
+                .setTitle(`${enemyMember.nickname}`)
+                .setDescription(`оглушило на ${Math.round(stunTime / 1000)} секунд`)
+                .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif');
+            (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedStuned] }).then(msg => {
+                setTimeout(() => msg.delete(), stunTime);
+            });
+            enemyMember.timeout(stunTime, 'вас оглушило ядром');
+        }
+        function catched() {
+            var _a;
+            const embedCatch = new discord_js_1.MessageEmbed()
+                .setColor('GREEN')
+                .setTitle(`${enemyMember.nickname}`)
+                .setDescription(`поймал ядро 🎉`)
+                .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif');
+            (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedCatch] }).then(msg => {
+                setTimeout(() => msg.delete(), 10000);
+            });
+            (() => __awaiter(this, void 0, void 0, function* () {
+                const client = yield pool.connect();
+                try {
+                    const res = yield client.query(`
+                    update users
+                    set user_money = user_money + 1
+                    where user_id = '${enemyMember.user.id}';
+                    `);
+                }
+                finally {
+                    client.release();
+                }
+            }))().catch(err => console.log(err.stack));
+        }
+        function missed() {
+            var _a;
+            const embedMiss = new discord_js_1.MessageEmbed()
+                .setColor('GREEN')
+                .setTitle(`${currentMember.nickname}`)
+                .setDescription(`не попал в цель, в другой раз повезет`)
+                .setImage('https://c.tenor.com/ArzW85faMkgAAAAd/fail-basketball.gif');
+            (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedMiss] }).then(msg => {
+                setTimeout(() => msg.delete(), 10000);
+            });
+        }
+        setTimeout(() => {
+            ;
+            (() => __awaiter(void 0, void 0, void 0, function* () {
+                const client = yield pool.connect();
+                try {
+                    const res = yield client.query(`
+                    update users
+                    set user_money = user_money - 1
+                    where user_id = '${currentMember.user.id}';
+                    `);
+                }
+                finally {
+                    client.release();
+                }
+            }))().catch(err => console.log(err.stack));
+        }, 1000);
+        setTimeout(() => {
+            if (hitChance < 0.8) {
+                // 80% chance of being hit
+                if (!adminStatus) {
+                    if (catchChance < 0.7) {
+                        // 56% chance of being stunned
+                        stunned();
+                    }
+                    else {
+                        // 24% chance of catch cannon ball
+                        catched();
+                    }
+                }
+                else {
+                    catched(); //admin always catches
+                }
+            }
+            else {
+                // 20% chance of miss
+                missed();
+            }
+        }, 2000);
+    }
     if (commandName === 'юзеры') {
         let list = [];
-        yield ((_g = interaction.guild) === null || _g === void 0 ? void 0 : _g.members.fetch().then((members) => members.forEach((member) => {
+        yield ((_j = interaction.guild) === null || _j === void 0 ? void 0 : _j.members.fetch().then((members) => members.forEach((member) => {
             list.push(`${member.user.username} | ${member.nickname}`);
         })));
         interaction.reply({
@@ -280,23 +407,23 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
             .setTitle('Список пользователей:')
             .setDescription(list.join("\n"))
             .setImage('https://c.tenor.com/UZmwl8vaGC0AAAAi/peepo-g.gif');
-        (_h = interaction.channel) === null || _h === void 0 ? void 0 : _h.send({ embeds: [embedUserList] }).then(msg => {
+        (_k = interaction.channel) === null || _k === void 0 ? void 0 : _k.send({ embeds: [embedUserList] }).then(msg => {
             setTimeout(() => msg.delete(), 15000);
         });
     }
     if (commandName === 'юзер') {
         let user = interaction.user;
-        if (((_j = options.getUser('юзер')) === null || _j === void 0 ? void 0 : _j.username) !== undefined) {
+        if (((_l = options.getUser('юзер')) === null || _l === void 0 ? void 0 : _l.username) !== undefined) {
             user = options.getUser('юзер');
         }
-        let m = yield ((_k = interaction.guild) === null || _k === void 0 ? void 0 : _k.members.fetch());
-        let user_id = (_l = m === null || m === void 0 ? void 0 : m.find(m => m.user.id === (user === null || user === void 0 ? void 0 : user.id))) === null || _l === void 0 ? void 0 : _l.id;
+        let m = yield ((_m = interaction.guild) === null || _m === void 0 ? void 0 : _m.members.fetch());
+        let user_id = (_o = m === null || m === void 0 ? void 0 : m.find(m => m.user.id === (user === null || user === void 0 ? void 0 : user.id))) === null || _o === void 0 ? void 0 : _o.id;
         let user_nick;
         let user_name;
         let user_avatar;
         let user_money;
         let roles = [];
-        yield ((_o = (_m = interaction.guild) === null || _m === void 0 ? void 0 : _m.members.fetch(user_id)) === null || _o === void 0 ? void 0 : _o.then((member) => {
+        yield ((_q = (_p = interaction.guild) === null || _p === void 0 ? void 0 : _p.members.fetch(user_id)) === null || _q === void 0 ? void 0 : _q.then((member) => {
             user_name = member.user.username;
             user_nick = member.nickname;
             user_avatar = member.user.avatarURL();
@@ -331,7 +458,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                 .addField('Роли:', roles.join('\n'), true)
                 .addField('Ядра:', `${user_money}`, true);
             (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedUserInfo] }).then(msg => {
-                setTimeout(() => msg.delete(), 15000);
+                setTimeout(() => msg.delete(), 12000);
             });
         }, 1000);
         setTimeout(() => {
@@ -340,8 +467,8 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
     }
     if (commandName === 'кто_я') {
         let commandFunctions = require('./InternalFunctions.js');
-        let adminStatus = (_r = (yield ((_q = (_p = interaction.command) === null || _p === void 0 ? void 0 : _p.guild) === null || _q === void 0 ? void 0 : _q.members.fetch(interaction.user.id)))) === null || _r === void 0 ? void 0 : _r.permissions.has("ADMINISTRATOR");
-        let nick = (_u = (yield ((_t = (_s = interaction.command) === null || _s === void 0 ? void 0 : _s.guild) === null || _t === void 0 ? void 0 : _t.members.fetch(interaction.user.id)))) === null || _u === void 0 ? void 0 : _u.nickname;
+        let adminStatus = (_t = (yield ((_s = (_r = interaction.command) === null || _r === void 0 ? void 0 : _r.guild) === null || _s === void 0 ? void 0 : _s.members.fetch(interaction.user.id)))) === null || _t === void 0 ? void 0 : _t.permissions.has("ADMINISTRATOR");
+        let nick = (_w = (yield ((_v = (_u = interaction.command) === null || _u === void 0 ? void 0 : _u.guild) === null || _v === void 0 ? void 0 : _v.members.fetch(interaction.user.id)))) === null || _w === void 0 ? void 0 : _w.nickname;
         let firstName = options.getString('имя').toLowerCase();
         let dayOfBirth = options.getNumber('день');
         let you = commandFunctions.names(firstName, dayOfBirth);
@@ -368,17 +495,17 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
             (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send(`${nick} заявляет, что он теперь ${you}`);
         }, 3000);
         if (!adminStatus) {
-            (_w = (_v = interaction.command) === null || _v === void 0 ? void 0 : _v.guild) === null || _w === void 0 ? void 0 : _w.members.fetch(interaction.user.id).then((member) => { member.setNickname(you); });
+            (_y = (_x = interaction.command) === null || _x === void 0 ? void 0 : _x.guild) === null || _y === void 0 ? void 0 : _y.members.fetch(interaction.user.id).then((member) => { member.setNickname(you); });
         }
     }
     if (commandName === 'удалить_команду') {
         let cmdName = options.getString('команда');
-        let adminStatus = (_z = (yield ((_y = (_x = interaction.command) === null || _x === void 0 ? void 0 : _x.guild) === null || _y === void 0 ? void 0 : _y.members.fetch(interaction.user.id)))) === null || _z === void 0 ? void 0 : _z.permissions.has("ADMINISTRATOR");
+        let adminStatus = (_1 = (yield ((_0 = (_z = interaction.command) === null || _z === void 0 ? void 0 : _z.guild) === null || _0 === void 0 ? void 0 : _0.members.fetch(interaction.user.id)))) === null || _1 === void 0 ? void 0 : _1.permissions.has("ADMINISTRATOR");
         if (adminStatus) {
-            let c = yield ((_0 = interaction.guild) === null || _0 === void 0 ? void 0 : _0.commands.fetch());
-            let foundCmdId = (_1 = c === null || c === void 0 ? void 0 : c.find(c => c.name === cmdName)) === null || _1 === void 0 ? void 0 : _1.id;
+            let c = yield ((_2 = interaction.guild) === null || _2 === void 0 ? void 0 : _2.commands.fetch());
+            let foundCmdId = (_3 = c === null || c === void 0 ? void 0 : c.find(c => c.name === cmdName)) === null || _3 === void 0 ? void 0 : _3.id;
             if (foundCmdId !== undefined) {
-                (_2 = interaction.guild) === null || _2 === void 0 ? void 0 : _2.commands.fetch(foundCmdId).then((com) => { com.delete(); });
+                (_4 = interaction.guild) === null || _4 === void 0 ? void 0 : _4.commands.fetch(foundCmdId).then((com) => { com.delete(); });
                 interaction.reply({
                     content: `команда ${cmdName} удалена`,
                     ephemeral: true,

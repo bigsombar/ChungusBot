@@ -13,23 +13,6 @@ import { Pool, Client } from 'pg'
 dotevn.config()
 
 let pool = new Pool()
-if(process.platform == 'win32') {
-    pool = new Pool({         
-        user: 'bigsombar',
-        host: '192.168.0.180',
-        database: 'bigsombar',
-        password: '7015',
-        port: 5432,
-    })
-} else {
-    pool = new Pool({          
-        user: 'bigsombar',
-        host: '127.0.0.1',
-        database: 'bigsombar',
-        password: '7015',
-        port: 5432,
-    }) 
-}
 
 const client = new DiscordJS.Client({
     intents: [
@@ -42,11 +25,32 @@ const client = new DiscordJS.Client({
 
 client.on('ready', () => {
     console.log('Chungus is ready my ass!')
-
+    if(process.platform == 'win32') {
+        pool = new Pool({         
+            user: 'bigsombar',
+            host: '192.168.0.180',
+            database: 'bigsombar',
+            password: '7015',
+            port: 5432,
+        })
+        client.user?.setActivity("за разработкой📝", {
+            type: "WATCHING"
+          })
+    } else {
+        pool = new Pool({          
+            user: 'bigsombar',
+            host: '127.0.0.1',
+            database: 'bigsombar',
+            password: '7015',
+            port: 5432,
+        }) 
+        client.user?.setActivity("за ядрами", {
+            type: "WATCHING"
+          })
+    }
     const guildId = '709463991759536139'
     const guild = client.guilds.cache.get(guildId)
     let commands
-
     if(guild) {
         commands = guild.commands
     } else {
@@ -114,7 +118,7 @@ client.on('ready', () => {
         description: 'кидает в тебя ядро, берегись',
     })
     commands?.create({name: 'кинуть_ядро_в',
-        description: 'кидает ядро в невинного юзера',
+        description: 'попросить кинуть ядро в невинного юзера',
         options: [
             {
                 name: 'юзер',
@@ -167,7 +171,7 @@ client.on('ready', () => {
     ]
     }) 
     // REPEAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
-    var TestPostInterval = setInterval(BDSync, (60000*60)) //выполняется каждый час
+    var TestPostInterval = setInterval(BDSync, (60000*60)) //every hour
     // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler)
 })
@@ -182,12 +186,12 @@ client.on('interactionCreate', async (interaction) => {
         let adminStatus = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.permissions.has("ADMINISTRATOR")
         let nick = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.nickname
         let rTime = Math.floor((Math.random() * 15000) + 5000)
-        var randomResult = Math.random() // from 0 to 1
+        var catchChance = Math.random() // from 0 to 1
         function stunned() {
             const embedStuned = new MessageEmbed()
             .setColor('GREEN')
             .setTitle(`${nick}`)
-            .setDescription(`оглушило на ${rTime/1000} секунд`)
+            .setDescription(`оглушило на ${Math.round(rTime/1000)} секунд`)
             .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif')
             interaction.channel?.send({ embeds: [embedStuned] })
             .then(msg => {
@@ -203,7 +207,7 @@ client.on('interactionCreate', async (interaction) => {
             .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif')
             interaction.channel?.send({ embeds: [embedCatch] })
             .then(msg => {
-                setTimeout(() => msg.delete(), 10000)
+                setTimeout(() => msg.delete(), 7000)
             })
             ;(async () => {
                 const client = await pool.connect()
@@ -227,7 +231,7 @@ client.on('interactionCreate', async (interaction) => {
         }, 5000); 
         setTimeout(() => {
             if(!adminStatus) {
-                if (randomResult < 0.7) {
+                if (catchChance < 0.7) {
                     // 70% chance of being stunned
                     stunned();
                 }  else {
@@ -238,6 +242,121 @@ client.on('interactionCreate', async (interaction) => {
                 catched(); //admin always catches
             }
         }, 2000);                                    
+    }
+    if(commandName === 'кинуть_ядро_в') {
+        let currentMember = (await interaction.guild?.members.fetch(interaction.user.id))!
+        let enemyMember = (await interaction.guild?.members.fetch(options.getUser('юзер')!.id))!
+        let adminStatus = enemyMember.permissions.has("ADMINISTRATOR")
+        let stunTime = Math.floor((Math.random() * 15000) + 5000)
+        var hitChance = Math.random()
+        var catchChance = Math.random()
+        var currentMemberMoney = 0
+
+        const client = await pool.connect()
+        try {
+            const res = await client.query(`
+            select user_money from users
+            where user_id = '${currentMember.id}';
+            `)
+            currentMemberMoney = res.rows[0].user_money
+        } finally {
+            client.release()
+        }
+
+        if(currentMemberMoney <= 0) { //Checking money is available
+            interaction.reply({
+                content: `${currentMember?.nickname} у вас недостаточно ядер`,
+                ephemeral: true, 
+            })
+            return
+        } else {
+            interaction.reply({
+                content: `${currentMember?.nickname} Кидает ядро в ${enemyMember?.nickname}!`,
+                ephemeral: false, 
+            })
+            setTimeout(() => {
+                interaction.deleteReply()
+            }, 5000);
+        }
+        function stunned() {
+            const embedStuned = new MessageEmbed()
+            .setColor('GREEN')
+            .setTitle(`${enemyMember.nickname}`)
+            .setDescription(`оглушило на ${Math.round(stunTime/1000)} секунд`)
+            .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif')
+            interaction.channel?.send({ embeds: [embedStuned] })
+            .then(msg => {
+                setTimeout(() => msg.delete(), stunTime)
+            })
+            enemyMember.timeout(stunTime, 'вас оглушило ядром')
+        }
+        function catched() {
+            const embedCatch = new MessageEmbed()
+            .setColor('GREEN')
+            .setTitle(`${enemyMember.nickname}`)
+            .setDescription(`поймал ядро 🎉`)
+            .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif')
+            interaction.channel?.send({ embeds: [embedCatch] })
+            .then(msg => {
+                setTimeout(() => msg.delete(), 10000)
+            })
+            ;(async () => {
+                const client = await pool.connect()
+                try {
+                    const res = await client.query(`
+                    update users
+                    set user_money = user_money + 1
+                    where user_id = '${enemyMember.user.id}';
+                    `)
+                } finally {
+                    client.release()
+                }
+            })().catch(err => console.log(err.stack))
+        }
+        function missed() {
+            const embedMiss = new MessageEmbed()
+            .setColor('GREEN')
+            .setTitle(`${currentMember.nickname}`)
+            .setDescription(`не попал в цель, в другой раз повезет`)
+            .setImage('https://c.tenor.com/ArzW85faMkgAAAAd/fail-basketball.gif')
+            interaction.channel?.send({ embeds: [embedMiss] })
+            .then(msg => {
+                setTimeout(() => msg.delete(), 10000)
+            })
+        }
+        setTimeout(() => { //decreasing money by 1
+            ;(async () => {
+                const client = await pool.connect()
+                try {
+                    const res = await client.query(`
+                    update users
+                    set user_money = user_money - 1
+                    where user_id = '${currentMember.user.id}';
+                    `)
+                } finally {
+                    client.release()
+                }
+            })().catch(err => console.log(err.stack))
+        }, 1000);
+        setTimeout(() => { //Casino roll
+            if (hitChance < 0.8) {
+                // 80% chance of being hit
+                if(!adminStatus) {
+                    if (catchChance < 0.7) {
+                        // 56% chance of being stunned
+                        stunned()
+                    } else {
+                        // 24% chance of catch cannon ball
+                        catched() 
+                    }
+                } else {
+                    catched() //admin always catches
+                }
+            } else {
+                // 20% chance of miss
+                missed()
+            }
+        }, 2000);
     }
     if(commandName === 'юзеры') {
         let list: string[] = []
@@ -313,7 +432,7 @@ client.on('interactionCreate', async (interaction) => {
             .addField('Ядра:', `${user_money}`, true)      
             interaction.channel?.send({ embeds: [embedUserInfo] })
             .then(msg => {
-                setTimeout(() => msg.delete(), 15000)
+                setTimeout(() => msg.delete(), 12000)
             })
         }, 1000);
         setTimeout(() => {
