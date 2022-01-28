@@ -183,6 +183,29 @@ client.on('ready', () => {
             }
         ]
     });
+    commands === null || commands === void 0 ? void 0 : commands.create({ name: 'голосование',
+        description: 'проводит голосование',
+        options: [
+            {
+                name: 'название',
+                description: 'за что голосуем?',
+                required: true,
+                type: discord_js_1.default.Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'варианты',
+                description: 'введите варианты через запятую',
+                required: true,
+                type: discord_js_1.default.Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'время',
+                description: 'сколько секунд на голосование',
+                required: true,
+                type: discord_js_1.default.Constants.ApplicationCommandOptionTypes.NUMBER
+            }
+        ]
+    });
     commands === null || commands === void 0 ? void 0 : commands.create({ name: 'удалить_команду',
         description: 'удаляет указанную слэш команду с сервера',
         options: [
@@ -200,7 +223,7 @@ client.on('ready', () => {
     process.on('SIGINT', exitSignalHandler);
 });
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7;
     if (!interaction.isCommand()) {
         return;
     }
@@ -498,14 +521,86 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
             (_y = (_x = interaction.command) === null || _x === void 0 ? void 0 : _x.guild) === null || _y === void 0 ? void 0 : _y.members.fetch(interaction.user.id).then((member) => { member.setNickname(you); });
         }
     }
+    if (commandName === 'голосование') {
+        let commandFunctions = require('./InternalFunctions.js');
+        let votingName = options.getString('название');
+        let variants = (_z = options.getString('варианты')) === null || _z === void 0 ? void 0 : _z.split(',');
+        variants = commandFunctions.uniq(variants);
+        let timeOnVote = options.getNumber('время') * 1000;
+        if ((variants === null || variants === void 0 ? void 0 : variants.length) <= 1 || (variants === null || variants === void 0 ? void 0 : variants.length) > 5) {
+            interaction.reply({
+                content: `варианты указаны неверно`,
+                ephemeral: true,
+            });
+            return;
+        }
+        else if (timeOnVote > 300000) {
+            interaction.reply({
+                content: `голосование не может длится больше 5 минут`,
+                ephemeral: true,
+            });
+        }
+        let votingRow = new discord_js_1.MessageActionRow();
+        let embedResult = new discord_js_1.MessageEmbed()
+            .setColor('PURPLE')
+            .setTitle(`${votingName}`)
+            .setDescription('');
+        variants.forEach(variant => {
+            votingRow.addComponents(new discord_js_1.MessageButton()
+                .setCustomId(`${variant}`)
+                .setLabel(`${variant}`)
+                .setStyle('PRIMARY'));
+            embedResult.addField(`${variant}`, '‎', false);
+        });
+        yield interaction.reply({
+            content: `запуск`,
+            ephemeral: false,
+        });
+        setTimeout(() => {
+            interaction.deleteReply();
+        }, 500);
+        (_0 = interaction.channel) === null || _0 === void 0 ? void 0 : _0.send({
+            content: 'голосование',
+            embeds: [embedResult],
+            components: [votingRow]
+        }).then(msg => {
+            setTimeout(() => msg.delete(), timeOnVote + 1000);
+        });
+        const collector = (_1 = interaction.channel) === null || _1 === void 0 ? void 0 : _1.createMessageComponentCollector({ time: timeOnVote });
+        let clickedUsers = [];
+        collector.on('collect', (i) => __awaiter(void 0, void 0, void 0, function* () {
+            var _8;
+            if (clickedUsers.includes(i.user.id)) {
+                let member = (yield ((_8 = interaction.guild) === null || _8 === void 0 ? void 0 : _8.members.fetch(i.user.id)));
+                i.reply({
+                    content: `${member.nickname} самый умный тут? тебе потом эти сообщения удалять ( ͡° ͜ʖ ͡°)`,
+                    ephemeral: true
+                });
+                return;
+            }
+            let fieldIndex = embedResult.fields.findIndex(f => f.name === i.customId); // добавить таймер голосования
+            //embedResult.fields[fieldIndex].value = `${Number(embedResult.fields[fieldIndex].value)  + 1}`
+            embedResult.fields[fieldIndex].value = embedResult.fields[fieldIndex].value + '█';
+            yield i.update({ content: 'голосование', embeds: [embedResult], components: [votingRow] });
+            clickedUsers.push(i.user.id);
+        }));
+        collector.on('end', (collected) => __awaiter(void 0, void 0, void 0, function* () {
+            var _9;
+            console.log(`Collected ${collected.size} items`);
+            (_9 = interaction.channel) === null || _9 === void 0 ? void 0 : _9.send({
+                content: 'результаты голосования',
+                embeds: [embedResult]
+            });
+        }));
+    }
     if (commandName === 'удалить_команду') {
         let cmdName = options.getString('команда');
-        let adminStatus = (_1 = (yield ((_0 = (_z = interaction.command) === null || _z === void 0 ? void 0 : _z.guild) === null || _0 === void 0 ? void 0 : _0.members.fetch(interaction.user.id)))) === null || _1 === void 0 ? void 0 : _1.permissions.has("ADMINISTRATOR");
+        let adminStatus = (_4 = (yield ((_3 = (_2 = interaction.command) === null || _2 === void 0 ? void 0 : _2.guild) === null || _3 === void 0 ? void 0 : _3.members.fetch(interaction.user.id)))) === null || _4 === void 0 ? void 0 : _4.permissions.has("ADMINISTRATOR");
         if (adminStatus) {
-            let c = yield ((_2 = interaction.guild) === null || _2 === void 0 ? void 0 : _2.commands.fetch());
-            let foundCmdId = (_3 = c === null || c === void 0 ? void 0 : c.find(c => c.name === cmdName)) === null || _3 === void 0 ? void 0 : _3.id;
+            let c = yield ((_5 = interaction.guild) === null || _5 === void 0 ? void 0 : _5.commands.fetch());
+            let foundCmdId = (_6 = c === null || c === void 0 ? void 0 : c.find(c => c.name === cmdName)) === null || _6 === void 0 ? void 0 : _6.id;
             if (foundCmdId !== undefined) {
-                (_4 = interaction.guild) === null || _4 === void 0 ? void 0 : _4.commands.fetch(foundCmdId).then((com) => { com.delete(); });
+                (_7 = interaction.guild) === null || _7 === void 0 ? void 0 : _7.commands.fetch(foundCmdId).then((com) => { com.delete(); });
                 interaction.reply({
                     content: `команда ${cmdName} удалена`,
                     ephemeral: true,

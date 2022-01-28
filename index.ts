@@ -5,7 +5,7 @@
 //botsync in cmd
 //добавляй await к запросам требующим время идиот
 import { Utils } from 'discord-api-types'
-import DiscordJS, { Channel, Guild, Intents, Message, MessageEmbed } from 'discord.js'
+import DiscordJS, { ButtonInteraction, Channel, Guild, Intents, Message, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js'
 import { MembershipStates } from 'discord.js/typings/enums'
 import dotevn from 'dotenv'
 import { Pool, Client } from 'pg'
@@ -159,6 +159,29 @@ client.on('ready', () => {
             }
         ]
     })
+    commands?.create({name: 'голосование',
+    description: 'проводит голосование',
+    options: [
+        {
+            name: 'название',
+            description: 'за что голосуем?',
+            required: true,
+            type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING
+        },
+        {
+            name: 'варианты',
+            description: 'введите варианты через запятую',
+            required: true,
+            type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING
+        },
+        {
+            name: 'время',
+            description: 'сколько секунд на голосование',
+            required: true,
+            type: DiscordJS.Constants.ApplicationCommandOptionTypes.NUMBER
+        }
+    ]
+    })
     commands?.create({name: 'удалить_команду',
     description: 'удаляет указанную слэш команду с сервера',
     options: [
@@ -177,9 +200,7 @@ client.on('ready', () => {
 })
 
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isCommand()) {
-        return
-    }
+    if (!interaction.isCommand()) {return}
     const {commandName, options} = interaction 
 
     if(commandName === 'ядро') {
@@ -473,6 +494,84 @@ client.on('interactionCreate', async (interaction) => {
             interaction.command?.guild?.members.fetch(interaction.user.id).then((member)=> {member.setNickname(you)})
         }
     }
+    if(commandName === 'голосование') {
+        let commandFunctions = require('./InternalFunctions.js');
+        let votingName = options.getString('название')!
+        let variants = options.getString('варианты')?.split(',')!
+        variants = commandFunctions.uniq(variants)
+        let timeOnVote = options.getNumber('время')! * 1000
+        if(variants?.length <= 1 || variants?.length > 5) {
+            interaction.reply({
+                content: `варианты указаны неверно`,
+                ephemeral: true, 
+            })
+            return
+        } else if (timeOnVote > 300000) {
+            interaction.reply({
+                content: `голосование не может длится больше 5 минут`,
+                ephemeral: true, 
+            })
+        }
+        let votingRow = new MessageActionRow()
+        
+        let embedResult = new MessageEmbed()
+            .setColor('PURPLE')
+            .setTitle(`${votingName}`)
+            .setDescription('')
+
+        variants.forEach(variant => {
+            votingRow.addComponents(
+                new MessageButton()
+                    .setCustomId(`${variant}`)
+                   .setLabel(`${variant}`)
+                    .setStyle('PRIMARY'),
+            );
+            embedResult.addField(`${variant}`, '‎', false)
+        })
+        await interaction.reply({
+            content: `запуск`,
+            ephemeral: false,                          
+        })
+        setTimeout(() => {
+            interaction.deleteReply()
+        }, 500);
+
+        interaction.channel?.send({ 
+        content: 'голосование',
+        embeds: [embedResult],
+        components: [votingRow]
+        })
+        .then(msg => {  // для удаления голосования                     
+            setTimeout(() => msg.delete(), timeOnVote + 1000)
+        })
+
+        const collector = interaction.channel?.createMessageComponentCollector({ time: timeOnVote })!
+        let clickedUsers: string[] = []
+        collector.on('collect', async i => {
+            if(clickedUsers.includes(i.user.id)) {
+                let member = (await interaction.guild?.members.fetch(i.user.id))!
+                i.reply({
+                    content: `${member.nickname} самый умный тут? тебе потом эти сообщения удалять ( ͡° ͜ʖ ͡°)`,
+                    ephemeral: true                   
+                })
+                return
+            }
+            let fieldIndex = embedResult.fields.findIndex(f => f.name === i.customId)                       // добавить таймер голосования
+            
+            //embedResult.fields[fieldIndex].value = `${Number(embedResult.fields[fieldIndex].value)  + 1}`
+            embedResult.fields[fieldIndex].value = embedResult.fields[fieldIndex].value + '█';
+            await i.update({ content: 'голосование', embeds: [embedResult], components: [votingRow] });
+            clickedUsers.push(i.user.id)
+        });
+        collector.on('end', async collected => {
+            console.log(`Collected ${collected.size} items`) 
+            interaction.channel?.send({ 
+                content: 'результаты голосования',
+                embeds: [embedResult]
+            })
+
+        });
+    }
     if(commandName === 'удалить_команду') {
         let cmdName = options.getString('команда')!
         let adminStatus = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.permissions.has("ADMINISTRATOR")
@@ -500,6 +599,7 @@ client.on('interactionCreate', async (interaction) => {
     }
     
 })
+
 
 
 
