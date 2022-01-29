@@ -32,18 +32,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = __importStar(require("discord.js"));
+const voice_1 = require("@discordjs/voice");
 const dotenv_1 = __importDefault(require("dotenv"));
 const pg_1 = require("pg");
 dotenv_1.default.config();
-let pool = new pg_1.Pool();
 const client = new discord_js_1.default.Client({
     intents: [
         discord_js_1.Intents.FLAGS.GUILDS,
         discord_js_1.Intents.FLAGS.GUILD_MESSAGES,
         discord_js_1.Intents.FLAGS.GUILD_MEMBERS,
-        discord_js_1.Intents.FLAGS.GUILD_BANS
+        discord_js_1.Intents.FLAGS.GUILD_BANS,
+        discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES
     ]
 });
+// VARIABLES
+let pool = new pg_1.Pool();
+let lastVote = 0;
+const player = (0, voice_1.createAudioPlayer)();
+function connectToChannel(channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const connection = (0, voice_1.joinVoiceChannel)({
+            channelId: channel.id,
+            guildId: channel.guild.id,
+            adapterCreator: channel.guild.voiceAdapterCreator,
+        });
+        try {
+            yield (0, voice_1.entersState)(connection, voice_1.VoiceConnectionStatus.Ready, 30e3);
+            return connection;
+        }
+        catch (error) {
+            connection.destroy();
+            throw error;
+        }
+    });
+}
 client.on('ready', () => {
     var _a, _b, _c;
     console.log('Chungus is ready my ass!');
@@ -217,13 +239,13 @@ client.on('ready', () => {
             }
         ]
     });
-    // REPEAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
+    //  REPETAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
     var TestPostInterval = setInterval(BDSync, (60000 * 60)); //every hour
     // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler);
 });
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7, _8;
     if (!interaction.isCommand()) {
         return;
     }
@@ -527,6 +549,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
         let variants = (_z = options.getString('варианты')) === null || _z === void 0 ? void 0 : _z.split(',');
         variants = commandFunctions.uniq(variants);
         let timeOnVote = options.getNumber('время') * 1000;
+        let messageId = '';
         if ((variants === null || variants === void 0 ? void 0 : variants.length) <= 1 || (variants === null || variants === void 0 ? void 0 : variants.length) > 5) {
             interaction.reply({
                 content: `варианты указаны неверно`,
@@ -534,17 +557,18 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
             });
             return;
         }
-        else if (timeOnVote > 300000) {
+        else if (timeOnVote > 300000 || timeOnVote < 5000) {
             interaction.reply({
-                content: `голосование не может длится больше 5 минут`,
+                content: `голосование не может длится больше 5 минут и меньше 5 секунд`,
                 ephemeral: true,
             });
+            return;
         }
         let votingRow = new discord_js_1.MessageActionRow();
         let embedResult = new discord_js_1.MessageEmbed()
             .setColor('PURPLE')
             .setTitle(`${votingName}`)
-            .setDescription('');
+            .setDescription(`осталось: ${timeOnVote / 1000} секунд`);
         variants.forEach(variant => {
             votingRow.addComponents(new discord_js_1.MessageButton()
                 .setCustomId(`${variant}`)
@@ -552,6 +576,24 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                 .setStyle('PRIMARY'));
             embedResult.addField(`${variant}`, '‎', false);
         });
+        function Coundown() {
+            var _a;
+            if (timeOnVote > 1) {
+                timeOnVote = timeOnVote - 5000;
+                embedResult.description = `осталось: ${timeOnVote / 1000} секунд`;
+                (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.messages.fetch(messageId).then(m => m.edit({ content: 'голосование', embeds: [embedResult], components: [votingRow] }));
+            }
+            else {
+                clearInterval(CountDown);
+            }
+        }
+        function playGolosovanie() {
+            const resource = (0, voice_1.createAudioResource)('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', {
+                inputType: voice_1.StreamType.Arbitrary,
+            });
+            player.play(resource);
+            return (0, voice_1.entersState)(player, voice_1.AudioPlayerStatus.Playing, 5e3);
+        }
         yield interaction.reply({
             content: `запуск`,
             ephemeral: false,
@@ -559,48 +601,73 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
         setTimeout(() => {
             interaction.deleteReply();
         }, 500);
-        (_0 = interaction.channel) === null || _0 === void 0 ? void 0 : _0.send({
-            content: 'голосование',
+        let voiceChannel = (_0 = interaction.guild) === null || _0 === void 0 ? void 0 : _0.channels.cache.find(c => c.name === 'Звук'); // проигрывание голосования в войс
+        let connection = yield connectToChannel(voiceChannel);
+        connection.subscribe(player);
+        yield playGolosovanie();
+        connection.on(voice_1.VoiceConnectionStatus.Disconnected, (oldState, newState) => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                yield Promise.race([
+                    (0, voice_1.entersState)(connection, voice_1.VoiceConnectionStatus.Signalling, 5000),
+                    (0, voice_1.entersState)(connection, voice_1.VoiceConnectionStatus.Connecting, 5000),
+                ]);
+                // Seems to be reconnecting to a new channel - ignore disconnect
+            }
+            catch (error) {
+                // Seems to be a real disconnect which SHOULDN'T be recovered from
+                player.stop();
+                connection.destroy();
+            }
+        }));
+        (_1 = interaction.channel) === null || _1 === void 0 ? void 0 : _1.send({
+            content: '**голосование**',
             embeds: [embedResult],
             components: [votingRow]
         }).then(msg => {
-            setTimeout(() => msg.delete(), timeOnVote + 1000);
+            messageId = msg.id;
+            setTimeout(() => msg.delete(), timeOnVote + 500);
         });
-        const collector = (_1 = interaction.channel) === null || _1 === void 0 ? void 0 : _1.createMessageComponentCollector({ time: timeOnVote });
+        const collector = (_2 = interaction.channel) === null || _2 === void 0 ? void 0 : _2.createMessageComponentCollector({ time: timeOnVote }); // обработка голосования
+        var CountDown = setInterval(Coundown, (5000)); //каждые 5 секунд
         let clickedUsers = [];
         collector.on('collect', (i) => __awaiter(void 0, void 0, void 0, function* () {
-            var _8;
+            var _9;
             if (clickedUsers.includes(i.user.id)) {
-                let member = (yield ((_8 = interaction.guild) === null || _8 === void 0 ? void 0 : _8.members.fetch(i.user.id)));
+                let member = (yield ((_9 = interaction.guild) === null || _9 === void 0 ? void 0 : _9.members.fetch(i.user.id)));
                 i.reply({
                     content: `${member.nickname} самый умный тут? тебе потом эти сообщения удалять ( ͡° ͜ʖ ͡°)`,
                     ephemeral: true
                 });
                 return;
             }
-            let fieldIndex = embedResult.fields.findIndex(f => f.name === i.customId); // добавить таймер голосования
-            //embedResult.fields[fieldIndex].value = `${Number(embedResult.fields[fieldIndex].value)  + 1}`
+            let fieldIndex = embedResult.fields.findIndex(f => f.name === i.customId);
             embedResult.fields[fieldIndex].value = embedResult.fields[fieldIndex].value + '█';
-            yield i.update({ content: 'голосование', embeds: [embedResult], components: [votingRow] });
+            yield i.update({ content: '**голосование**', embeds: [embedResult], components: [votingRow] });
             clickedUsers.push(i.user.id);
         }));
-        collector.on('end', (collected) => __awaiter(void 0, void 0, void 0, function* () {
-            var _9;
-            console.log(`Collected ${collected.size} items`);
-            (_9 = interaction.channel) === null || _9 === void 0 ? void 0 : _9.send({
-                content: 'результаты голосования',
-                embeds: [embedResult]
-            });
-        }));
+        setTimeout(() => {
+            collector.on('end', (collected) => __awaiter(void 0, void 0, void 0, function* () {
+                var _a;
+                embedResult.description = '';
+                (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({
+                    content: 'результаты голосования',
+                    embeds: [embedResult]
+                });
+                if (connection.state.status != voice_1.VoiceConnectionStatus.Destroyed) { // проверка на кикнутого бота из войса
+                    player.stop();
+                    connection.destroy();
+                }
+            }));
+        }, 1000);
     }
     if (commandName === 'удалить_команду') {
         let cmdName = options.getString('команда');
-        let adminStatus = (_4 = (yield ((_3 = (_2 = interaction.command) === null || _2 === void 0 ? void 0 : _2.guild) === null || _3 === void 0 ? void 0 : _3.members.fetch(interaction.user.id)))) === null || _4 === void 0 ? void 0 : _4.permissions.has("ADMINISTRATOR");
+        let adminStatus = (_5 = (yield ((_4 = (_3 = interaction.command) === null || _3 === void 0 ? void 0 : _3.guild) === null || _4 === void 0 ? void 0 : _4.members.fetch(interaction.user.id)))) === null || _5 === void 0 ? void 0 : _5.permissions.has("ADMINISTRATOR");
         if (adminStatus) {
-            let c = yield ((_5 = interaction.guild) === null || _5 === void 0 ? void 0 : _5.commands.fetch());
-            let foundCmdId = (_6 = c === null || c === void 0 ? void 0 : c.find(c => c.name === cmdName)) === null || _6 === void 0 ? void 0 : _6.id;
+            let c = yield ((_6 = interaction.guild) === null || _6 === void 0 ? void 0 : _6.commands.fetch());
+            let foundCmdId = (_7 = c === null || c === void 0 ? void 0 : c.find(c => c.name === cmdName)) === null || _7 === void 0 ? void 0 : _7.id;
             if (foundCmdId !== undefined) {
-                (_7 = interaction.guild) === null || _7 === void 0 ? void 0 : _7.commands.fetch(foundCmdId).then((com) => { com.delete(); });
+                (_8 = interaction.guild) === null || _8 === void 0 ? void 0 : _8.commands.fetch(foundCmdId).then((com) => { com.delete(); });
                 interaction.reply({
                     content: `команда ${cmdName} удалена`,
                     ephemeral: true,
