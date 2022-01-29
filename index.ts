@@ -5,23 +5,41 @@
 //botsync in cmd
 //добавляй await к запросам требующим время идиот
 import { Utils } from 'discord-api-types'
-import DiscordJS, { ButtonInteraction, Channel, Guild, Intents, Message, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js'
-import { MembershipStates } from 'discord.js/typings/enums'
+import DiscordJS, { ButtonInteraction, Channel, Guild, Intents, Message, MessageActionRow, MessageButton, MessageEmbed, VoiceChannel } from 'discord.js'
+import { joinVoiceChannel, createAudioPlayer, createAudioResource, entersState, StreamType, AudioPlayerStatus, VoiceConnectionStatus} from '@discordjs/voice';
 import dotevn from 'dotenv'
 import { Pool, Client } from 'pg'
-
 dotevn.config()
-
-let pool = new Pool()
-
 const client = new DiscordJS.Client({
     intents: [
        Intents.FLAGS.GUILDS,
        Intents.FLAGS.GUILD_MESSAGES,
        Intents.FLAGS.GUILD_MEMBERS,
-       Intents.FLAGS.GUILD_BANS
+       Intents.FLAGS.GUILD_BANS,
+       Intents.FLAGS.GUILD_VOICE_STATES
     ]
 })
+
+// VARIABLES
+let pool = new Pool()
+let lastVote = 0
+const player = createAudioPlayer();
+
+async function connectToChannel(channel: VoiceChannel) { // Функция подключения к голосовому каналу
+    const connection = joinVoiceChannel({
+        channelId: channel.id,
+        guildId: channel.guild.id,
+        adapterCreator: channel.guild.voiceAdapterCreator,
+    });
+
+    try {
+        await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
+        return connection;
+    } catch (error) {
+        connection.destroy();
+        throw error;
+    }
+}
 
 client.on('ready', () => {
     console.log('Chungus is ready my ass!')
@@ -51,11 +69,7 @@ client.on('ready', () => {
     const guildId = '709463991759536139'
     const guild = client.guilds.cache.get(guildId)
     let commands
-    if(guild) {
-        commands = guild.commands
-    } else {
-        commands = client.application?.commands
-    }
+    if(guild) { commands = guild.commands } else { commands = client.application?.commands }
     // FUNCTIONS
     function sendToChat(channelName: string, importantlText: string) {
         let channel = guild?.channels.cache.find(c => c.name === channelName)
@@ -107,7 +121,7 @@ client.on('ready', () => {
         var datetime = `${Da.getHours()}:${Da.getMinutes()}  ${Da.getDate()}-${Da.getMonth()+1}-${Da.getFullYear()}`
         sendToChat('bot-logs',`About to exit in ${datetime}`)
         console.log(`About to exit in ${datetime}`)
-        clearInterval(TestPostInterval)
+        clearInterval(TestPostInterval)      
         pool.end()
         setTimeout(() => {
             process.exit()
@@ -193,8 +207,8 @@ client.on('ready', () => {
         }
     ]
     }) 
-    // REPEAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
-    var TestPostInterval = setInterval(BDSync, (60000*60)) //every hour
+    //  REPETAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
+    var TestPostInterval = setInterval(BDSync, (60000*60))//every hour
     // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler)
 })
@@ -500,25 +514,27 @@ client.on('interactionCreate', async (interaction) => {
         let variants = options.getString('варианты')?.split(',')!
         variants = commandFunctions.uniq(variants)
         let timeOnVote = options.getNumber('время')! * 1000
+        let messageId = ''
+
         if(variants?.length <= 1 || variants?.length > 5) {
             interaction.reply({
                 content: `варианты указаны неверно`,
                 ephemeral: true, 
             })
             return
-        } else if (timeOnVote > 300000) {
+        } else if (timeOnVote > 300000 || timeOnVote < 5000) {
             interaction.reply({
-                content: `голосование не может длится больше 5 минут`,
+                content: `голосование не может длится больше 5 минут и меньше 5 секунд`,
                 ephemeral: true, 
             })
+            return
         }
         let votingRow = new MessageActionRow()
         
         let embedResult = new MessageEmbed()
             .setColor('PURPLE')
             .setTitle(`${votingName}`)
-            .setDescription('')
-
+            .setDescription(`осталось: ${timeOnVote/1000} секунд`)
         variants.forEach(variant => {
             votingRow.addComponents(
                 new MessageButton()
@@ -528,6 +544,26 @@ client.on('interactionCreate', async (interaction) => {
             );
             embedResult.addField(`${variant}`, '‎', false)
         })
+        function Coundown() {   // Функция обратного отсчета
+            if(timeOnVote > 1)
+            {
+                timeOnVote = timeOnVote - 5000
+                embedResult.description = `осталось: ${timeOnVote/1000} секунд`
+                interaction.channel?.messages.fetch(messageId).then(m => m.edit({ content: 'голосование', embeds: [embedResult], components: [votingRow] }))
+            } else {                
+                clearInterval(CountDown)
+            }
+            
+        }
+        function playGolosovanie() {   // Функция проигрывания голосования
+            const resource = createAudioResource('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', {
+                inputType: StreamType.Arbitrary,
+            });
+        
+            player.play(resource);
+            return entersState(player, AudioPlayerStatus.Playing, 5e3);
+        }
+        
         await interaction.reply({
             content: `запуск`,
             ephemeral: false,                          
@@ -535,19 +571,42 @@ client.on('interactionCreate', async (interaction) => {
         setTimeout(() => {
             interaction.deleteReply()
         }, 500);
+        
 
-        interaction.channel?.send({ 
-        content: 'голосование',
+        let voiceChannel = interaction.guild?.channels.cache.find(c => c.name === 'Звук') as VoiceChannel // проигрывание голосования в войс
+        let connection = await connectToChannel(voiceChannel);
+        connection.subscribe(player)
+        
+        await playGolosovanie()
+
+        connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {   // авто уничтожение соединения если кикнут бот
+            try {
+                await Promise.race([
+                    entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+                    entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+                ]);
+                // Seems to be reconnecting to a new channel - ignore disconnect
+            } catch (error) {
+                // Seems to be a real disconnect which SHOULDN'T be recovered from
+                player.stop()
+                connection.destroy();
+            }
+        });
+
+        interaction.channel?.send({ // создание и удаление голосования через заданное время
+        content: '**голосование**',
         embeds: [embedResult],
         components: [votingRow]
         })
-        .then(msg => {  // для удаления голосования                     
-            setTimeout(() => msg.delete(), timeOnVote + 1000)
+        .then(msg => {  
+            messageId = msg.id                    
+            setTimeout(() => msg.delete(), timeOnVote + 500)
         })
 
-        const collector = interaction.channel?.createMessageComponentCollector({ time: timeOnVote })!
+        const collector = interaction.channel?.createMessageComponentCollector({ time: timeOnVote })! // обработка голосования
+        var CountDown = setInterval(Coundown, (5000)) //каждые 5 секунд
         let clickedUsers: string[] = []
-        collector.on('collect', async i => {
+        collector.on('collect', async i => { 
             if(clickedUsers.includes(i.user.id)) {
                 let member = (await interaction.guild?.members.fetch(i.user.id))!
                 i.reply({
@@ -556,21 +615,24 @@ client.on('interactionCreate', async (interaction) => {
                 })
                 return
             }
-            let fieldIndex = embedResult.fields.findIndex(f => f.name === i.customId)                       // добавить таймер голосования
-            
-            //embedResult.fields[fieldIndex].value = `${Number(embedResult.fields[fieldIndex].value)  + 1}`
+            let fieldIndex = embedResult.fields.findIndex(f => f.name === i.customId)  
             embedResult.fields[fieldIndex].value = embedResult.fields[fieldIndex].value + '█';
-            await i.update({ content: 'голосование', embeds: [embedResult], components: [votingRow] });
+            await i.update({ content: '**голосование**', embeds: [embedResult], components: [votingRow] });
             clickedUsers.push(i.user.id)
         });
-        collector.on('end', async collected => {
-            console.log(`Collected ${collected.size} items`) 
-            interaction.channel?.send({ 
-                content: 'результаты голосования',
-                embeds: [embedResult]
-            })
-
-        });
+        setTimeout(() => {
+            collector.on('end', async collected => { // вывод результатов голосования
+                embedResult.description = ''            
+                interaction.channel?.send({ 
+                    content: 'результаты голосования',
+                    embeds: [embedResult]
+                })
+                if(connection.state.status != VoiceConnectionStatus.Destroyed) {  // проверка на кикнутого бота из войса
+                    player.stop()
+                    connection.destroy()
+                }
+            });
+        }, 1000);
     }
     if(commandName === 'удалить_команду') {
         let cmdName = options.getString('команда')!
@@ -597,10 +659,8 @@ client.on('interactionCreate', async (interaction) => {
             })
         }
     }
-    
+
 })
-
-
 
 
 
