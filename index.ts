@@ -4,11 +4,9 @@
 //git add *, git commit -m "sampletext", git push
 //botsync in cmd
 //добавляй await к запросам требующим время идиот
-import { Utils } from 'discord-api-types'
-import DiscordJS, { ButtonInteraction, Channel, Guild, Intents, Message, MessageActionRow, MessageButton, MessageEmbed, VoiceChannel } from 'discord.js'
-import { joinVoiceChannel, createAudioPlayer, createAudioResource, entersState, StreamType, AudioPlayerStatus, VoiceConnectionStatus} from '@discordjs/voice';
+import DiscordJS, { Intents } from 'discord.js'
 import dotevn from 'dotenv'
-import { Pool, Client } from 'pg'
+import { Pool } from 'pg'
 dotevn.config()
 const client = new DiscordJS.Client({
     intents: [
@@ -21,29 +19,12 @@ const client = new DiscordJS.Client({
 })
 
 // VARIABLES
+let jstsPostfix: string
 let pool = new Pool()
-let lastVote = 0
-const player = createAudioPlayer();
-
-async function connectToChannel(channel: VoiceChannel) { // Функция подключения к голосовому каналу
-    const connection = joinVoiceChannel({
-        channelId: channel.id,
-        guildId: channel.guild.id,
-        adapterCreator: channel.guild.voiceAdapterCreator,
-    });
-
-    try {
-        await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
-        return connection;
-    } catch (error) {
-        connection.destroy();
-        throw error;
-    }
-}
 
 client.on('ready', () => {
     console.log('Chungus is ready my ass!')
-    if(process.platform == 'win32') {
+    if(process.platform == 'win32') {   // Определяет систему 
         pool = new Pool({         
             user: 'bigsombar',
             host: '192.168.0.180',
@@ -53,7 +34,8 @@ client.on('ready', () => {
         })
         client.user?.setActivity("за разработкой📝", {
             type: "WATCHING"
-          })
+        })
+        jstsPostfix = 'ts'
     } else {
         pool = new Pool({          
             user: 'bigsombar',
@@ -64,7 +46,8 @@ client.on('ready', () => {
         }) 
         client.user?.setActivity("за ядрами", {
             type: "WATCHING"
-          })
+        })
+        jstsPostfix = 'js'
     }
     const guildId = '709463991759536139'
     const guild = client.guilds.cache.get(guildId)
@@ -218,446 +201,32 @@ client.on('interactionCreate', async (interaction) => {
     const {commandName, options} = interaction 
 
     if(commandName === 'ядро') {
-        let adminStatus = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.permissions.has("ADMINISTRATOR")
-        let nick = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.nickname
-        let rTime = Math.floor((Math.random() * 15000) + 5000)
-        var catchChance = Math.random() // from 0 to 1
-        function stunned() {
-            const embedStuned = new MessageEmbed()
-            .setColor('GREEN')
-            .setTitle(`${nick}`)
-            .setDescription(`оглушило на ${Math.round(rTime/1000)} секунд`)
-            .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif')
-            interaction.channel?.send({ embeds: [embedStuned] })
-            .then(msg => {
-                setTimeout(() => msg.delete(), rTime)
-            })
-            interaction.guild?.members.fetch(interaction.user.id).then((member)=> {member.timeout(rTime, 'вас оглушило ядром')})
-        }
-        function catched() {
-            const embedCatch = new MessageEmbed()
-            .setColor('GREEN')
-            .setTitle(`${nick}`)
-            .setDescription(`поймал ядро 🎉`)
-            .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif')
-            interaction.channel?.send({ embeds: [embedCatch] })
-            .then(msg => {
-                setTimeout(() => msg.delete(), 7000)
-            })
-            ;(async () => {
-                const client = await pool.connect()
-                try {
-                    const res = await client.query(`
-                    update users
-                    set user_money = user_money + 1
-                    where user_id = '${interaction.user.id}';
-                    `)
-                } finally {
-                    client.release()
-                }
-              })().catch(err => console.log(err.stack))
-        }
-        interaction.reply({
-            content: `Лови ядро!`,
-            ephemeral: false, 
-        })   
-        setTimeout(() => {
-            interaction.deleteReply()
-        }, 5000); 
-        setTimeout(() => {
-            if(!adminStatus) {
-                if (catchChance < 0.7) {
-                    // 70% chance of being stunned
-                    stunned();
-                }  else {
-                    // 30% chance of catch cannon ball
-                    catched(); 
-                }
-            } else {
-                catched(); //admin always catches
-            }
-        }, 2000);                                    
+        let command = require(`./commands/yadro.${jstsPostfix}`)
+        command.execute(interaction,pool)                                                   
     }
     if(commandName === 'кинуть_ядро_в') {
-        let currentMember = (await interaction.guild?.members.fetch(interaction.user.id))!
-        let enemyMember = (await interaction.guild?.members.fetch(options.getUser('юзер')!.id))!
-        let adminStatus = enemyMember.permissions.has("ADMINISTRATOR")
-        let stunTime = Math.floor((Math.random() * 15000) + 5000)
-        var hitChance = Math.random()
-        var catchChance = Math.random()
-        var currentMemberMoney = 0
-
-        const client = await pool.connect()
-        try {
-            const res = await client.query(`
-            select user_money from users
-            where user_id = '${currentMember.id}';
-            `)
-            currentMemberMoney = res.rows[0].user_money
-        } finally {
-            client.release()
-        }
-
-        if(currentMemberMoney <= 0) { //Checking money is available
-            interaction.reply({
-                content: `${currentMember?.nickname} у вас недостаточно ядер`,
-                ephemeral: true, 
-            })
-            return
-        } else {
-            interaction.reply({
-                content: `${currentMember?.nickname} Кидает ядро в ${enemyMember?.nickname}!`,
-                ephemeral: false, 
-            })
-            setTimeout(() => {
-                interaction.deleteReply()
-            }, 5000);
-        }
-        function stunned() {
-            const embedStuned = new MessageEmbed()
-            .setColor('GREEN')
-            .setTitle(`${enemyMember.nickname}`)
-            .setDescription(`оглушило на ${Math.round(stunTime/1000)} секунд`)
-            .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif')
-            interaction.channel?.send({ embeds: [embedStuned] })
-            .then(msg => {
-                setTimeout(() => msg.delete(), stunTime)
-            })
-            enemyMember.timeout(stunTime, 'вас оглушило ядром')
-        }
-        function catched() {
-            const embedCatch = new MessageEmbed()
-            .setColor('GREEN')
-            .setTitle(`${enemyMember.nickname}`)
-            .setDescription(`поймал ядро 🎉`)
-            .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif')
-            interaction.channel?.send({ embeds: [embedCatch] })
-            .then(msg => {
-                setTimeout(() => msg.delete(), 10000)
-            })
-            ;(async () => {
-                const client = await pool.connect()
-                try {
-                    const res = await client.query(`
-                    update users
-                    set user_money = user_money + 1
-                    where user_id = '${enemyMember.user.id}';
-                    `)
-                } finally {
-                    client.release()
-                }
-            })().catch(err => console.log(err.stack))
-        }
-        function missed() {
-            const embedMiss = new MessageEmbed()
-            .setColor('GREEN')
-            .setTitle(`${currentMember.nickname}`)
-            .setDescription(`не попал в цель, в другой раз повезет`)
-            .setImage('https://c.tenor.com/ArzW85faMkgAAAAd/fail-basketball.gif')
-            interaction.channel?.send({ embeds: [embedMiss] })
-            .then(msg => {
-                setTimeout(() => msg.delete(), 10000)
-            })
-        }
-        setTimeout(() => { //decreasing money by 1
-            ;(async () => {
-                const client = await pool.connect()
-                try {
-                    const res = await client.query(`
-                    update users
-                    set user_money = user_money - 1
-                    where user_id = '${currentMember.user.id}';
-                    `)
-                } finally {
-                    client.release()
-                }
-            })().catch(err => console.log(err.stack))
-        }, 1000);
-        setTimeout(() => { //Casino roll
-            if (hitChance < 0.8) {
-                // 80% chance of being hit
-                if(!adminStatus) {
-                    if (catchChance < 0.7) {
-                        // 56% chance of being stunned
-                        stunned()
-                    } else {
-                        // 24% chance of catch cannon ball
-                        catched() 
-                    }
-                } else {
-                    catched() //admin always catches
-                }
-            } else {
-                // 20% chance of miss
-                missed()
-            }
-        }, 2000);
+        let command = require(`./commands/throw_yadro.${jstsPostfix}`)
+        command.execute(interaction,pool,options)    
     }
     if(commandName === 'юзеры') {
-        let list: string[] = []
-        await interaction.guild?.members
-        .fetch()
-        .then((members) =>
-            members.forEach((member) => {
-                list.push(`${member.user.username} | ${member.nickname}`)
-            }),
-        );
-        interaction.reply({
-            content: ` зачем тебе эта информация? (¬､¬) \nя удалю это через 15 секунд, записывай быстрее`,
-            ephemeral: false,
-        })
-        setTimeout(() => {
-            interaction.deleteReply()
-        }, 7000);  
-        const embedUserList = new MessageEmbed()
-        .setColor('GREEN')
-        .setTitle('Список пользователей:')
-        .setDescription(list.join("\n"))
-        .setImage('https://c.tenor.com/UZmwl8vaGC0AAAAi/peepo-g.gif')
-        interaction.channel?.send({ embeds: [embedUserList] })
-        .then(msg => {
-            setTimeout(() => msg.delete(), 15000)
-        })
+        let command = require(`./commands/users.${jstsPostfix}`)
+        command.execute(interaction)
     }
     if(commandName === 'юзер') {
-        let user = interaction.user
-        if(options.getUser('юзер')?.username !== undefined) {
-            user = options.getUser('юзер')!
-        }
-        let m = await interaction.guild?.members.fetch()
-        let user_id = m?.find(m => m.user.id === user?.id)?.id
-        let user_nick: string
-        let user_name: string
-        let user_avatar: string
-        let user_money: string
-        let roles: string[] = []
-        await interaction.guild?.members.fetch(user_id!)?.then((member)=> {
-            user_name = member.user.username
-            user_nick = member.nickname!
-            user_avatar = member.user.avatarURL()!
-            member.roles.cache.each(role => {
-                roles.push(`<@&${role.id}>`)
-            })
-        })
-
-        ;(async () => {
-            const client = await pool.connect()
-            try {
-                const res = await client.query(`
-                select user_money from users
-                where user_id = '${user_id}';
-                `)
-                user_money = res.rows[0].user_money
-            } finally {
-                client.release()
-            }
-        })().catch(err => console.log(err.stack))
-        
-        setTimeout(() => {
-            interaction.reply({
-                content: `Хотел подробностей, да?\nно я не могу долго такое показывать`,
-                ephemeral: false,
-            })
-            const embedUserInfo = new MessageEmbed()
-            .setColor('GREEN')
-            .setTitle(`${user_name}`)
-            .setDescription(`${user_nick}`)
-            .setImage(`${user_avatar}`)
-            .addField('Роли:', roles.join('\n'), true) 
-            .addField('Ядра:', `${user_money}`, true)      
-            interaction.channel?.send({ embeds: [embedUserInfo] })
-            .then(msg => {
-                setTimeout(() => msg.delete(), 12000)
-            })
-        }, 1000);
-        setTimeout(() => {
-            interaction.deleteReply()
-        }, 7000);
-        
-
+        let command = require(`./commands/user.${jstsPostfix}`)
+        command.execute(interaction,pool,options)     
     }
     if(commandName === 'кто_я') {
-        let commandFunctions = require('./InternalFunctions.js');
-        let adminStatus = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.permissions.has("ADMINISTRATOR")
-        let nick = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.nickname
-        let firstName = options.getString('имя')!.toLowerCase()
-        let dayOfBirth = options.getNumber('день')!
-        let you: string = commandFunctions.names(firstName, dayOfBirth)
-        if (!(/^[а-я]+$/i.test(firstName))) {
-            interaction.reply({
-                content: `Неправильная буква имени, подходит от а до я`,
-                ephemeral: true, 
-            })
-            return
-        }
-        if (!(dayOfBirth >= 1 && dayOfBirth <= 31)) {
-            interaction.reply({
-                content: `Неправильно выбран день, нужно от 1 до 31`,
-                ephemeral: true, 
-            })
-            return
-        }
-        interaction.reply({
-            content: `Ты ${you}`,
-            ephemeral: true, 
-        })
-        setTimeout(() => {
-            interaction.channel?.send(`${nick} заявляет, что он теперь ${you}`)
-        }, 3000);
-        if(!adminStatus) {
-            interaction.command?.guild?.members.fetch(interaction.user.id).then((member)=> {member.setNickname(you)})
-        }
+        let command = require(`./commands/who.${jstsPostfix}`)
+        command.execute(interaction,options)   
     }
     if(commandName === 'голосование') {
-        let commandFunctions = require('./InternalFunctions.js');
-        let votingName = options.getString('название')!
-        let variants = options.getString('варианты')?.split(',')!
-        variants = commandFunctions.uniq(variants)
-        let timeOnVote = options.getNumber('время')! * 1000
-        let messageId = ''
-
-        if(variants?.length <= 1 || variants?.length > 5) {
-            interaction.reply({
-                content: `варианты указаны неверно`,
-                ephemeral: true, 
-            })
-            return
-        } else if (timeOnVote > 300000 || timeOnVote < 5000) {
-            interaction.reply({
-                content: `голосование не может длится больше 5 минут и меньше 5 секунд`,
-                ephemeral: true, 
-            })
-            return
-        }
-        let votingRow = new MessageActionRow()
-        
-        let embedResult = new MessageEmbed()
-            .setColor('PURPLE')
-            .setTitle(`${votingName}`)
-            .setDescription(`осталось: ${timeOnVote/1000} секунд`)
-        variants.forEach(variant => {
-            votingRow.addComponents(
-                new MessageButton()
-                    .setCustomId(`${variant}`)
-                   .setLabel(`${variant}`)
-                    .setStyle('PRIMARY'),
-            );
-            embedResult.addField(`${variant}`, '‎', false)
-        })
-        function Coundown() {   // Функция обратного отсчета
-            if(timeOnVote > 1)
-            {
-                timeOnVote = timeOnVote - 5000
-                embedResult.description = `осталось: ${timeOnVote/1000} секунд`
-                interaction.channel?.messages.fetch(messageId).then(m => m.edit({ content: 'голосование', embeds: [embedResult], components: [votingRow] }))
-            } else {                
-                clearInterval(CountDown)
-            }
-            
-        }
-        function playGolosovanie() {   // Функция проигрывания голосования
-            const resource = createAudioResource('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', {
-                inputType: StreamType.Arbitrary,
-            });
-        
-            player.play(resource);
-            return entersState(player, AudioPlayerStatus.Playing, 5e3);
-        }
-        
-        await interaction.reply({
-            content: `запуск`,
-            ephemeral: false,                          
-        })
-        setTimeout(() => {
-            interaction.deleteReply()
-        }, 500);
-        
-
-        let voiceChannel = interaction.guild?.channels.cache.find(c => c.name === 'Звук') as VoiceChannel // проигрывание голосования в войс
-        let connection = await connectToChannel(voiceChannel);
-        connection.subscribe(player)
-        
-        await playGolosovanie()
-
-        connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {   // авто уничтожение соединения если кикнут бот
-            try {
-                await Promise.race([
-                    entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
-                    entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
-                ]);
-                // Seems to be reconnecting to a new channel - ignore disconnect
-            } catch (error) {
-                // Seems to be a real disconnect which SHOULDN'T be recovered from
-                player.stop()
-                connection.destroy();
-            }
-        });
-
-        interaction.channel?.send({ // создание и удаление голосования через заданное время
-        content: '**голосование**',
-        embeds: [embedResult],
-        components: [votingRow]
-        })
-        .then(msg => {  
-            messageId = msg.id                    
-            setTimeout(() => msg.delete(), timeOnVote + 500)
-        })
-
-        const collector = interaction.channel?.createMessageComponentCollector({ time: timeOnVote })! // обработка голосования
-        var CountDown = setInterval(Coundown, (5000)) //каждые 5 секунд
-        let clickedUsers: string[] = []
-        collector.on('collect', async i => { 
-            if(clickedUsers.includes(i.user.id)) {
-                let member = (await interaction.guild?.members.fetch(i.user.id))!
-                i.reply({
-                    content: `${member.nickname} самый умный тут? тебе потом эти сообщения удалять ( ͡° ͜ʖ ͡°)`,
-                    ephemeral: true                   
-                })
-                return
-            }
-            let fieldIndex = embedResult.fields.findIndex(f => f.name === i.customId)  
-            embedResult.fields[fieldIndex].value = embedResult.fields[fieldIndex].value + '█';
-            await i.update({ content: '**голосование**', embeds: [embedResult], components: [votingRow] });
-            clickedUsers.push(i.user.id)
-        });
-        setTimeout(() => {
-            collector.on('end', async collected => { // вывод результатов голосования
-                embedResult.description = ''            
-                interaction.channel?.send({ 
-                    content: 'результаты голосования',
-                    embeds: [embedResult]
-                })
-                if(connection.state.status != VoiceConnectionStatus.Destroyed) {  // проверка на кикнутого бота из войса
-                    player.stop()
-                    connection.destroy()
-                }
-            });
-        }, 1000);
+        let command = require(`./commands/vote.${jstsPostfix}`)
+        command.execute(interaction,options)
     }
     if(commandName === 'удалить_команду') {
-        let cmdName = options.getString('команда')!
-        let adminStatus = (await interaction.command?.guild?.members.fetch(interaction.user.id))?.permissions.has("ADMINISTRATOR")
-        if(adminStatus){
-            let c = await interaction.guild?.commands.fetch()
-            let foundCmdId = c?.find(c => c.name === cmdName)?.id
-            if (foundCmdId !== undefined) {
-                interaction.guild?.commands.fetch(foundCmdId).then((com)=> {com.delete()})
-                interaction.reply({
-                    content: `команда ${cmdName} удалена`,
-                    ephemeral: true,     
-                }) 
-            } else {
-                interaction.reply({
-                    content: `команда ${cmdName} не найдена`,
-                    ephemeral: true,     
-                })
-            }                  
-        } else {
-            interaction.reply({
-                content: `у вас недостаточно прав`,
-                ephemeral: true, 
-            })
-        }
+        let command = require(`./commands/delete_command.${jstsPostfix}`)
+        command.execute(interaction,options)
     }
 
 })
