@@ -237,7 +237,7 @@ client.on('ready', () => __awaiter(void 0, void 0, void 0, function* () {
     var TestPostInterval = setInterval(BDSync, (60000 * 60)); //every hour
     // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler);
-    BDSync(); // синкануть первый раз, потом удалить
+    //BDSync() // синкануть первый раз, потом удалить
 }));
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
     if (!interaction.isCommand()) {

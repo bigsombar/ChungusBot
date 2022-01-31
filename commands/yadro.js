@@ -23,7 +23,7 @@ module.exports = {
                 const embedStuned = new discord_js_1.MessageEmbed()
                     .setColor('RED')
                     .setTitle(`${nick}`)
-                    .setDescription(`оглушило на ${Math.round(rTime / 1000)} секунд`)
+                    .setDescription(`выпало ${catchChance}, оглушило на ${Math.round(rTime / 1000)} секунд`)
                     .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif');
                 (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedStuned] }).then(msg => {
                     setTimeout(() => msg.delete(), rTime);
@@ -35,7 +35,7 @@ module.exports = {
                 const embedCatch = new discord_js_1.MessageEmbed()
                     .setColor('GREEN')
                     .setTitle(`${nick}`)
-                    .setDescription(`поймал ядро 🎉`)
+                    .setDescription(`выпало ${catchChance}, поймал ядро 🎉`)
                     .setImage('https://c.tenor.com/s7hF0AVkmAoAAAAd/%D0%BC%D1%8E%D0%BD%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD-%D0%BC%D1%8E%D0%BD%D0%B3%D1%85%D0%B0%D1%83%D0%B7%D0%B5%D0%BD.gif');
                 (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send({ embeds: [embedCatch] }).then(msg => {
                     setTimeout(() => msg.delete(), 7000);
@@ -63,12 +63,12 @@ module.exports = {
             }, 5000);
             setTimeout(() => {
                 if (!adminStatus) {
-                    if (catchChance < 0.7) {
-                        // 70% chance of being stunned
+                    if (catchChance < 0.2) {
+                        // 20% chance of being stunned
                         stunned();
                     }
                     else {
-                        // 30% chance of catch cannon ball
+                        // 80% chance of catch cannon ball
                         catched();
                     }
                 }

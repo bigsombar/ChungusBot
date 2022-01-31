@@ -200,7 +200,7 @@ client.on('ready', async () => {
     var TestPostInterval = setInterval(BDSync, (60000*60))//every hour
     // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler)
-    BDSync() // синкануть первый раз, потом удалить
+    //BDSync() // синкануть первый раз, потом удалить
 })
 
 client.on('interactionCreate', async (interaction) => {
