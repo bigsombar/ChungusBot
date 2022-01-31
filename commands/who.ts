@@ -27,7 +27,9 @@ module.exports = {
             ephemeral: true, 
         })
         setTimeout(() => {
-            interaction.channel?.send(`${nick} заявляет, что он теперь ${you}`)
+            interaction.channel?.send(`${nick} заявляет, что он теперь ${you}`).then(msg => {
+                setTimeout(() => msg.delete(), 7000)
+            })
         }, 3000);
         if(!adminStatus) {
             interaction.command?.guild?.members.fetch(interaction.user.id).then((member)=> {member.setNickname(you)})
