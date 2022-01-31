@@ -34,13 +34,12 @@ module.exports = {
                 return;
             }
             interaction.reply({
-                content: `Ты ${you}`,
-                ephemeral: true,
+                content: `${nick} заявляет, что он теперь ${you}`,
+                ephemeral: false,
             });
             setTimeout(() => {
-                var _a;
-                (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send(`${nick} заявляет, что он теперь ${you}`);
-            }, 3000);
+                interaction.deleteReply();
+            }, 7000);
             if (!adminStatus) {
                 (_f = (_e = interaction.command) === null || _e === void 0 ? void 0 : _e.guild) === null || _f === void 0 ? void 0 : _f.members.fetch(interaction.user.id).then((member) => { member.setNickname(you); });
             }

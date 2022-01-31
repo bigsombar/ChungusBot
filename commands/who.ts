@@ -23,14 +23,12 @@ module.exports = {
             return
         }
         interaction.reply({
-            content: `Ты ${you}`,
-            ephemeral: true, 
+            content: `${nick} заявляет, что он теперь ${you}`,
+            ephemeral: false, 
         })
         setTimeout(() => {
-            interaction.channel?.send(`${nick} заявляет, что он теперь ${you}`).then(msg => {
-                setTimeout(() => msg.delete(), 7000)
-            })
-        }, 3000);
+            interaction.deleteReply()
+        }, 7000); 
         if(!adminStatus) {
             interaction.command?.guild?.members.fetch(interaction.user.id).then((member)=> {member.setNickname(you)})
         }
