@@ -21,7 +21,7 @@ module.exports = {
             function stunned() {
                 var _a, _b;
                 const embedStuned = new discord_js_1.MessageEmbed()
-                    .setColor('GREEN')
+                    .setColor('RED')
                     .setTitle(`${nick}`)
                     .setDescription(`оглушило на ${Math.round(rTime / 1000)} секунд`)
                     .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif');

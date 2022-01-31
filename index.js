@@ -36,7 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //ts-node index.ts - for manual start
 //git add *, git commit -m "sampletext", git push
 //botsync in cmd
-//добавляй await к запросам требующим время идиот
+//добавляй await к запросам требующим времени
 const discord_js_1 = __importStar(require("discord.js"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const pg_1 = require("pg");
@@ -53,7 +53,8 @@ const client = new discord_js_1.default.Client({
 // VARIABLES
 let jstsPostfix;
 let pool = new pg_1.Pool();
-client.on('ready', () => {
+let lastVoteDate = +new Date();
+client.on('ready', () => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     console.log('Chungus is ready my ass!');
     if (process.platform == 'win32') { // Определяет систему 
@@ -82,8 +83,12 @@ client.on('ready', () => {
         });
         jstsPostfix = 'js';
     }
-    const guildId = '709463991759536139';
-    const guild = client.guilds.cache.get(guildId);
+    const guildId = '493027607424663562';
+    let guilFind;
+    yield client.guilds.fetch(guildId).then(g => {
+        guilFind = g;
+    });
+    const guild = guilFind;
     let commands;
     if (guild) {
         commands = guild.commands;
@@ -140,7 +145,7 @@ client.on('ready', () => {
     function exitSignalHandler() {
         var Da = new Date();
         var datetime = `${Da.getHours()}:${Da.getMinutes()}  ${Da.getDate()}-${Da.getMonth() + 1}-${Da.getFullYear()}`;
-        sendToChat('bot-logs', `About to exit in ${datetime}`);
+        sendToChat('👾bot-logs📃', `About to exit in ${datetime}`);
         console.log(`About to exit in ${datetime}`);
         clearInterval(TestPostInterval);
         pool.end();
@@ -228,11 +233,12 @@ client.on('ready', () => {
             }
         ]
     });
-    //  REPETAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
+    // REPETAT VARIABLES CLEAN THEM IN !!!exitSignalHandler!!!
     var TestPostInterval = setInterval(BDSync, (60000 * 60)); //every hour
     // EXIT HANDLER
     process.on('SIGINT', exitSignalHandler);
-});
+    BDSync(); // синкануть первый раз, потом удалить
+}));
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
     if (!interaction.isCommand()) {
         return;
@@ -259,8 +265,21 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
         command.execute(interaction, options);
     }
     if (commandName === 'голосование') {
-        let command = require(`./commands/vote.${jstsPostfix}`);
-        command.execute(interaction, options);
+        var msMinute = 60 * 1000;
+        var msDay = 60 * 60 * 24 * 1000;
+        var currentDate = +new Date();
+        var differenceMinutes = Math.floor(((currentDate - lastVoteDate) % msDay) / msMinute);
+        if (differenceMinutes < 5) {
+            interaction.reply({
+                content: `голосование не может быть использовано чаще чем раз в 5 минут, прошло только ${differenceMinutes} минут`,
+                ephemeral: true,
+            });
+        }
+        else {
+            lastVoteDate = +new Date();
+            let command = require(`./commands/vote.${jstsPostfix}`);
+            command.execute(interaction, options);
+        }
     }
     if (commandName === 'удалить_команду') {
         let command = require(`./commands/delete_command.${jstsPostfix}`);

@@ -10,7 +10,7 @@ module.exports = {
         var catchChance = Math.random() // from 0 to 1
         function stunned() {
             const embedStuned = new MessageEmbed()
-            .setColor('GREEN')
+            .setColor('RED')
             .setTitle(`${nick}`)
             .setDescription(`оглушило на ${Math.round(rTime/1000)} секунд`)
             .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif')

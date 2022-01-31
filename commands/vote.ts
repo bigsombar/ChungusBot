@@ -25,7 +25,6 @@ module.exports = {
         variants = commandFunctions.uniq(variants)
         let timeOnVote = options.getNumber('время')! * 1000
         let messageId = ''
-
         if(variants?.length <= 1 || variants?.length > 5) {
             interaction.reply({
                 content: `варианты указаны неверно`,
@@ -39,6 +38,9 @@ module.exports = {
             })
             return
         }
+        // process.on('unhandledRejection', error => {
+        //     console.error('Unhandled promise rejection:', error);
+        // });
         let votingRow = new MessageActionRow()
         
         let embedResult = new MessageEmbed()
@@ -55,7 +57,7 @@ module.exports = {
             embedResult.addField(`${variant}`, '‎', false)
         })
         function Coundown() {   // Функция обратного отсчета
-            if(timeOnVote > 1)
+            if(timeOnVote > 5001)
             {
                 if (voiceChannel.members.size <= 1) {connection.disconnect()}
                 timeOnVote = timeOnVote - 5000
@@ -83,10 +85,12 @@ module.exports = {
             interaction.deleteReply()
         }, 500);
         
+        var voiceChannel: VoiceChannel
+        await interaction.guild?.channels.fetch('493027607915266081').then(channel => { // берем голосовой канал
+            voiceChannel = channel as VoiceChannel
+        })
 
-        var voiceChannel = interaction.guild?.channels.cache.find(c => c.name === 'Другое') as VoiceChannel // проигрывание голосования в войс
-
-        let connection = await connectToChannel(voiceChannel);
+        let connection = await connectToChannel(voiceChannel!);  // проигрывание голосования в войс
         connection.subscribe(player)
         
         await playGolosovanie()
@@ -101,13 +105,13 @@ module.exports = {
             setTimeout(() => msg.delete(), timeOnVote + 500)
         })
 
-        // connection.on('stateChange', (oldState, newState) => {                                   // Debug соединений
-        //     console.log(`Connection transitioned from ${oldState.status} to ${newState.status}`);
-        // });
+        connection.on('stateChange', (oldState, newState) => {                                   // Debug соединений
+            console.log(`Connection transitioned from ${oldState.status} to ${newState.status}`);
+        });
         
-        // player.on('stateChange', (oldState, newState) => {
-        //     console.log(`Audio player transitioned from ${oldState.status} to ${newState.status}`);
-        // });
+        player.on('stateChange', (oldState, newState) => {
+            console.log(`Audio player transitioned from ${oldState.status} to ${newState.status}`);
+        });
 
         connection.on(VoiceConnectionStatus.Disconnected, async () => {
             setTimeout(() => {
@@ -118,7 +122,7 @@ module.exports = {
         })
 
         const collector = interaction.channel?.createMessageComponentCollector({ time: timeOnVote })! // обработка голосования
-        var CountDown = setInterval(Coundown, (5000)) //каждые 5 секунд
+        var CountDown = setInterval(Coundown, (5000)) // раз в 5 секунд
         let clickedUsers: string[] = []
         collector.on('collect', async i => { 
             if(clickedUsers.includes(i.user.id)) {

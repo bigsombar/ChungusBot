@@ -53,6 +53,9 @@ module.exports = {
                 });
                 return;
             }
+            // process.on('unhandledRejection', error => {
+            //     console.error('Unhandled promise rejection:', error);
+            // });
             let votingRow = new discord_js_1.MessageActionRow();
             let embedResult = new discord_js_1.MessageEmbed()
                 .setColor('PURPLE')
@@ -67,7 +70,7 @@ module.exports = {
             });
             function Coundown() {
                 var _a;
-                if (timeOnVote > 1) {
+                if (timeOnVote > 5001) {
                     if (voiceChannel.members.size <= 1) {
                         connection.disconnect();
                     }
@@ -93,8 +96,11 @@ module.exports = {
             setTimeout(() => {
                 interaction.deleteReply();
             }, 500);
-            var voiceChannel = (_b = interaction.guild) === null || _b === void 0 ? void 0 : _b.channels.cache.find(c => c.name === 'Другое'); // проигрывание голосования в войс
-            let connection = yield connectToChannel(voiceChannel);
+            var voiceChannel;
+            yield ((_b = interaction.guild) === null || _b === void 0 ? void 0 : _b.channels.fetch('493027607915266081').then(channel => {
+                voiceChannel = channel;
+            }));
+            let connection = yield connectToChannel(voiceChannel); // проигрывание голосования в войс
             connection.subscribe(player);
             yield playGolosovanie();
             (_c = interaction.channel) === null || _c === void 0 ? void 0 : _c.send({
@@ -105,12 +111,12 @@ module.exports = {
                 messageId = msg.id;
                 setTimeout(() => msg.delete(), timeOnVote + 500);
             });
-            // connection.on('stateChange', (oldState, newState) => {                                   // Debug соединений
-            //     console.log(`Connection transitioned from ${oldState.status} to ${newState.status}`);
-            // });
-            // player.on('stateChange', (oldState, newState) => {
-            //     console.log(`Audio player transitioned from ${oldState.status} to ${newState.status}`);
-            // });
+            connection.on('stateChange', (oldState, newState) => {
+                console.log(`Connection transitioned from ${oldState.status} to ${newState.status}`);
+            });
+            player.on('stateChange', (oldState, newState) => {
+                console.log(`Audio player transitioned from ${oldState.status} to ${newState.status}`);
+            });
             connection.on(voice_1.VoiceConnectionStatus.Disconnected, () => __awaiter(this, void 0, void 0, function* () {
                 setTimeout(() => {
                     if (connection.state.status == voice_1.VoiceConnectionStatus.Disconnected) {
@@ -119,7 +125,7 @@ module.exports = {
                 }, 5000);
             }));
             const collector = (_d = interaction.channel) === null || _d === void 0 ? void 0 : _d.createMessageComponentCollector({ time: timeOnVote }); // обработка голосования
-            var CountDown = setInterval(Coundown, (5000)); //каждые 5 секунд
+            var CountDown = setInterval(Coundown, (5000)); // раз в 5 секунд
             let clickedUsers = [];
             collector.on('collect', (i) => __awaiter(this, void 0, void 0, function* () {
                 var _e;

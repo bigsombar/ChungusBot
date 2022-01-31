@@ -39,7 +39,7 @@ module.exports = {
         }
         function stunned() {
             const embedStuned = new MessageEmbed()
-            .setColor('GREEN')
+            .setColor('RED')
             .setTitle(`${enemyMember.nickname}`)
             .setDescription(`оглушило на ${Math.round(stunTime/1000)} секунд`)
             .setImage('https://c.tenor.com/m3dTQ35dchIAAAAC/teletubbies-tired.gif')
@@ -74,7 +74,7 @@ module.exports = {
         }
         function missed() {
             const embedMiss = new MessageEmbed()
-            .setColor('GREEN')
+            .setColor('DARK_BLUE')
             .setTitle(`${currentMember.nickname}`)
             .setDescription(`не попал в цель, в другой раз повезет`)
             .setImage('https://c.tenor.com/ArzW85faMkgAAAAd/fail-basketball.gif')
